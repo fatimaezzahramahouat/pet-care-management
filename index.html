@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services Animaliers - Pet Management</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <!-- Votre CSS -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS Personnalisé */
+        .navbar-custom {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-custom.scrolled {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .logo-text {
+            background: linear-gradient(90deg, #4CAF50, #2196F3);
+            
+          
+            font-weight: 700;
+        }
+        
+        .nav-link.active {
+            color: #1acaff !important;
+            font-weight: bold;
+        }
+        
+        .btn-login {
+            border-color:  #1acaff;
+            color: #1acaff;
+        }
+        
+        .btn-login:hover {
+            background-color: #1acaff;
+            color: white;
+        }
+        
+        .btn-register {
+            background-color: #1acaff;
+            border-color: #1acaff;
+        }
+        
+        .btn-register:hover {
+            background-color:  #1acaff;
+            border-color: #1acaff;
+        }
+        
+        .fullscreen-image {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .fullscreen-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+        
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(15, 46, 221, 0), rgba(106, 0, 245, 0));
+        }
+        
+        .image-content {
+            position: absolute;
+            z-index: 2;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            max-width: 800px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color:  #1acaff;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+        
+        .cta-button:hover {
+            background-color: #1acaff;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s ease;
+        }
+        
+        /* Pour compenser la navbar fixe */
+        body {
+            padding-top: 76px;
+        }
+        
+        section {
+            scroll-margin-top: 80px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding-top: 56px;
+            }
+            
+            .fullscreen-image {
+                height: 80vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Barre de navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top py-3">
+        <div class="container">
+            <!-- Logo -->
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                     style="width: 40px; height: 40px; margin-right: 10px;">
+                    <i class="bi bi-heart-pulse fs-5"></i>
+                </div>
+                <span class="logo-text fs-4">Pet Management</span>
+            </a>
+            
+            <!-- Bouton hamburger pour mobile -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Menu -->
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <!-- Liens de navigation -->
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" href="#services">
+                            <i class="bi bi-list-check me-1"></i> Services
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" href="#contactSection">
+                            <i class="bi bi-telephone me-1"></i> Contact
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Boutons Login/Register -->
+                <div class="d-flex align-items-center">
+                    <a href="#login" class="btn btn-login me-2">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Connexion
+                    </a>
+                    <a href="#register" class="btn btn-register">
+                        <i class="bi bi-person-plus me-1"></i> Inscription
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- SECTION HERO -->
+    <section class="fullscreen-image">
+        <img src="assets/ChatGPT Image 28 déc. 2025, 18_52_10 (2).png">
+             
+      
+    </section>
+
+    <!-- SECTION SERVICES -->
+    <section id="services" class="py-5" style="background-color: #f8f9fa;">
+        <div class="container">
+            <!-- Titre -->
+            <div class="text-center mb-5">
+                <h2 class="display-6 fw-bold text-primary mb-3">Trouvez les meilleurs services</h2>
+                <p class="lead text-muted">Des professionnels de confiance pour vos animaux de compagnie</p>
+            </div>
+            
+            <!-- Container de recherche -->
+            <div class="card shadow-lg border-0 mb-5">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <!-- Je recherche... -->
+                        <div class="col-md-3">
+                            <div class="d-flex flex-column">
+                                <label class="form-label fw-bold mb-2">
+                                    <i class="bi bi-search me-2"></i>Je recherche...
+                                </label>
+                                <div class="btn-group-vertical" role="group">
+                                    <button type="button" class="btn btn-outline-primary text-start mb-2 active" 
+                                            onclick="filterService('vet')">
+                                        <i class="bi bi-heart-pulse me-2"></i>Vétérinaires
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary text-start mb-2"
+                                            onclick="filterService('grooming')">
+                                        <i class="bi bi-scissors me-2"></i>Toiletteurs
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary text-start"
+                                            onclick="filterService('boarding')">
+                                        <i class="bi bi-house-heart me-2"></i>Pensions
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Près de moi -->
+                        <div class="col-md-3">
+                            <div class="d-flex flex-column">
+                                <label class="form-label fw-bold mb-2">
+                                    <i class="bi bi-geo-alt me-2"></i>Près de moi
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="bi bi-geo-fill"></i>
+                                    </span>
+                                    <input type="text" class="form-control" 
+                                           id="locationInput" 
+                                           placeholder="Entrez une ville ou code postal">
+                                </div>
+                                <button class="btn btn-link text-decoration-none p-0 mt-2" 
+                                        onclick="useCurrentLocation()">
+                                    <i class="bi bi-crosshair me-1"></i>Utiliser ma position actuelle
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Type d'animal -->
+                        <div class="col-md-3">
+                            <div class="d-flex flex-column">
+                                <label class="form-label fw-bold mb-2">
+                                    <i class="bi bi-heart me-2"></i>Mon animal
+                                </label>
+                                <select class="form-select" id="petTypeSelect">
+                                    <option value="all">Tous les animaux</option>
+                                    <option value="dog">🐶 Chien</option>
+                                    <option value="cat">🐱 Chat</option>
+                                    <option value="bird">🐦 Oiseau</option>
+                                    <option value="rabbit">🐰 Lapin</option>
+                                    <option value="rodent">🐹 Rongeur</option>
+                                    <option value="reptile">🦎 Reptile</option>
+                                    <option value="other">🐾 Autre</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Bouton Rechercher -->
+                        <div class="col-md-3">
+                            <div class="d-flex flex-column h-100 justify-content-end">
+                                <button class="btn btn-primary btn-lg w-100 py-3" onclick="searchServices()">
+                                    <i class="bi bi-search me-2"></i>Rechercher
+                                </button>
+                                <button class="btn btn-link text-decoration-none mt-2" data-bs-toggle="modal" data-bs-target="#advancedSearch">
+                                    <i class="bi bi-filter me-1"></i>Recherche avancée
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Services populaires -->
+            <div class="row">
+                <!-- Vétérinaires -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm border-0 card-hover">
+                        <div class="card-body text-center p-4">
+                            <div class="mb-3">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3">
+                                    <i class="bi bi-heart-pulse fs-1 text-primary"></i>
+                                </div>
+                            </div>
+                            <h4 class="card-title">Vétérinaires</h4>
+                            <p class="card-text text-muted">
+                                Soins médicaux, vaccinations, urgences 24h/24
+                            </p>
+                            <div class="mt-3">
+                                <span class="badge bg-light text-dark me-2">Consultation</span>
+                                <span class="badge bg-light text-dark me-2">Vaccination</span>
+                                <span class="badge bg-light text-dark">Chirurgie</span>
+                            </div>
+                            <button class="btn btn-outline-primary mt-4" onclick="filterService('vet')">
+                                <i class="bi bi-arrow-right me-2"></i>Trouver un vétérinaire
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Toiletteurs -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm border-0 card-hover">
+                        <div class="card-body text-center p-4">
+                            <div class="mb-3">
+                                <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex p-3">
+                                    <i class="bi bi-scissors fs-1 text-info"></i>
+                                </div>
+                            </div>
+                            <h4 class="card-title">Toiletteurs</h4>
+                            <p class="card-text text-muted">
+                                Toilettage, bain, coupe de griffes, soins esthétiques
+                            </p>
+                            <div class="mt-3">
+                                <span class="badge bg-light text-dark me-2">Bain</span>
+                                <span class="badge bg-light text-dark me-2">Coupe</span>
+                                <span class="badge bg-light text-dark">Soins</span>
+                            </div>
+                            <button class="btn btn-outline-info mt-4" onclick="filterService('grooming')">
+                                <i class="bi bi-arrow-right me-2"></i>Trouver un toiletteur
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pensions -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm border-0 card-hover">
+                        <div class="card-body text-center p-4">
+                            <div class="mb-3">
+                                <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex p-3">
+                                    <i class="bi bi-house-heart fs-1 text-warning"></i>
+                                </div>
+                            </div>
+                            <h4 class="card-title">Pensions</h4>
+                            <p class="card-text text-muted">
+                                Garde d'animaux, promenades, garderie de jour
+                            </p>
+                            <div class="mt-3">
+                                <span class="badge bg-light text-dark me-2">Garde</span>
+                                <span class="badge bg-light text-dark me-2">Promenade</span>
+                                <span class="badge bg-light text-dark">Garde de jour</span>
+                            </div>
+                            <button class="btn btn-outline-warning mt-4" onclick="filterService('boarding')">
+                                <i class="bi bi-arrow-right me-2"></i>Trouver une pension
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION CONTACT -->
+    <section id="contactSection" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold text-primary">Contactez-nous</h2>
+                <p class="lead">Nous sommes là pour répondre à vos questions sur nos services animaliers</p>
+            </div>
+
+            <div class="row">
+                <!-- Formulaire de contact -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card shadow border-0">
+                        <div class="card-body p-4">
+                            <h3 class="card-title mb-4">Envoyez-nous un message</h3>
+                            
+                            <form id="contactForm">
+                                <!-- Nom et Prénom -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="firstName" class="form-label">Prénom *</label>
+                                        <input type="text" class="form-control" id="firstName" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="lastName" class="form-label">Nom *</label>
+                                        <input type="text" class="form-control" id="lastName" required>
+                                    </div>
+                                </div>
+                                
+                                <!-- Email et Téléphone -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label">Email *</label>
+                                        <input type="email" class="form-control" id="email" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="phone" class="form-label">Téléphone</label>
+                                        <input type="tel" class="form-control" id="phone">
+                                    </div>
+                                </div>
+                                
+                                <!-- Type d'animal -->
+                                <div class="mb-3">
+                                    <label for="petType" class="form-label">Type d'animal</label>
+                                    <select class="form-select" id="petType">
+                                        <option value="">Sélectionnez un type</option>
+                                        <option value="dog">Chien</option>
+                                        <option value="cat">Chat</option>
+                                        <option value="bird">Oiseau</option>
+                                        <option value="reptile">Reptile</option>
+                                        <option value="other">Autre</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Service concerné -->
+                                <div class="mb-3">
+                                    <label for="service" class="form-label">Service concerné *</label>
+                                    <select class="form-select" id="service" required>
+                                        <option value="">Choisissez un service</option>
+                                        <option value="vet">Vétérinaire</option>
+                                        <option value="grooming">Toilettage</option>
+                                        <option value="boarding">Pension</option>
+                                        <option value="training">Éducation</option>
+                                        <option value="other">Autre demande</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Message -->
+                                <div class="mb-3">
+                                    <label for="message" class="form-label">Message *</label>
+                                    <textarea class="form-control" id="message" rows="5" required 
+                                              placeholder="Décrivez votre demande en détail..."></textarea>
+                                </div>
+                                
+                                <!-- Bouton d'envoi -->
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-send me-2"></i> Envoyer le message
+                                    </button>
+                                </div>
+                                
+                                <div class="mt-3 text-muted">
+                                    <small>* Champs obligatoires</small>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Informations de contact -->
+                <div class="col-lg-4">
+                    <!-- Carte de contact -->
+                    <div class="card shadow border-0 mb-4">
+                        <div class="card-body p-4">
+                            <h4 class="card-title mb-4">Nos coordonnées</h4>
+                            
+                            <!-- Adresse -->
+                            <div class="d-flex mb-4">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-geo-alt text-primary fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="fw-bold">Adresse</h6>
+                                    <p class="mb-0">
+                                        123 Rue des Animaux<br>
+                                        75000 Paris, France
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Téléphone -->
+                            <div class="d-flex mb-4">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-telephone text-primary fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="fw-bold">Téléphone</h6>
+                                    <p class="mb-0">+33 1 23 45 67 89</p>
+                                    <small class="text-muted">Lun-Ven: 9h-18h</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Email -->
+                            <div class="d-flex mb-4">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-envelope text-primary fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="fw-bold">Email</h6>
+                                    <p class="mb-0">contact@petservices.fr</p>
+                                    <small class="text-muted">Réponse sous 24h</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Urgences -->
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-heart-pulse text-danger fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="fw-bold text-danger">Urgences vétérinaires</h6>
+                                    <p class="mb-0">+33 1 23 45 67 90</p>
+                                    <small class="text-muted">24h/24, 7j/7</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ -->
+                    <div class="card shadow border-0">
+                        <div class="card-body p-4">
+                            <h4 class="card-title mb-4">Questions fréquentes</h4>
+                            
+                            <div class="accordion" id="faqAccordion">
+                                <!-- FAQ 1 -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                            Comment prendre rendez-vous ?
+                                        </button>
+                                    </h2>
+                                    <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body">
+                                            Vous pouvez prendre rendez-vous en ligne, par téléphone, ou directement via notre formulaire de contact.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- FAQ 2 -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                            Quels animaux acceptez-vous ?
+                                        </button>
+                                    </h2>
+                                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body">
+                                            Nous acceptons chiens, chats, oiseaux, rongeurs et petits reptiles.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- FAQ 3 -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                            Puis-je annuler un rendez-vous ?
+                                        </button>
+                                    </h2>
+                                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body">
+                                            Oui, gratuitement jusqu'à 24h avant le rendez-vous.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carte Google Maps -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card shadow border-0">
+                        <div class="card-body p-0">
+                            <div class="p-4">
+                                <h4 class="card-title mb-0">Nous trouver</h4>
+                            </div>
+                            <!-- Carte placeholder -->
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
+                                <div class="text-center">
+                                    <i class="bi bi-map fs-1 text-muted mb-3"></i>
+                                    <h5>Carte interactive</h5>
+                                    <p class="text-muted">Localisation de nos services</p>
+                                    <button class="btn btn-outline-primary" onclick="openMap()">
+                                        <i class="bi bi-geo-alt me-2"></i>Ouvrir dans Google Maps
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL RECHERCHE AVANCÉE -->
+    <div class="modal fade" id="advancedSearch" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Recherche avancée</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rayon de recherche</label>
+                            <select class="form-select">
+                                <option value="5">5 km</option>
+                                <option value="10" selected>10 km</option>
+                                <option value="20">20 km</option>
+                                <option value="50">50 km</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Note minimum</label>
+                            <select class="form-select">
+                                <option value="0">Toutes notes</option>
+                                <option value="3">3 étoiles et plus</option>
+                                <option value="4" selected>4 étoiles et plus</option>
+                                <option value="5">5 étoiles uniquement</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ouvert maintenant</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="openNow">
+                                <label class="form-check-label" for="openNow">
+                                    Afficher uniquement les services ouverts
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Services d'urgence</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="emergency">
+                                <label class="form-check-label" for="emergency">
+                                    Services d'urgence 24h/24
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="applyAdvancedSearch()">Appliquer les filtres</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIED DE PAGE -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Pet Management</h5>
+                    <p>Trouvez les meilleurs services pour vos animaux de compagnie.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Liens rapides</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#services" class="text-white-50 text-decoration-none">Services</a></li>
+                        <li><a href="#contactSection" class="text-white-50 text-decoration-none">Contact</a></li>
+                        <li><a href="#login" class="text-white-50 text-decoration-none">Connexion</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Suivez-nous</h5>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white"><i class="bi bi-facebook fs-5"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-instagram fs-5"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-twitter fs-5"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="bg-white my-4">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2024 Pet Management. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Variables globales
+        let currentService = 'vet';
+        
+        // Fonction pour scroller vers les services
+        function scrollToServices() {
+            document.getElementById('services').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+        
+        // Changer la navbar au scroll
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar-custom');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+            
+            // Mettre à jour les liens actifs
+            updateActiveNavLink();
+        });
+        
+        // Mettre à jour le lien actif dans la navbar
+        function updateActiveNavLink() {
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            let current = '';
+            
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 100;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        }
+        
+        // Fonctions pour la recherche de services
+        function filterService(serviceType) {
+            currentService = serviceType;
+            
+            // Mettre à jour les boutons actifs
+            document.querySelectorAll('.btn-group-vertical .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            console.log(`Filtre appliqué: ${serviceType}`);
+        }
+        
+        function useCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        document.getElementById('locationInput').value = 
+                            `Position: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
+                        console.log('Position obtenue:', position.coords);
+                    },
+                    function(error) {
+                        alert('Impossible d\'obtenir votre position. Veuillez entrer une ville manuellement.');
+                    }
+                );
+            } else {
+                alert('La géolocalisation n\'est pas supportée par votre navigateur.');
+            }
+        }
+        
+        function searchServices() {
+            const location = document.getElementById('locationInput').value;
+            const petType = document.getElementById('petTypeSelect').value;
+            
+            if (!location.trim()) {
+                alert('Veuillez entrer une ville ou un code postal.');
+                return;
+            }
+            
+            // Simulation de recherche
+            const services = {
+                'vet': 'vétérinaires',
+                'grooming': 'toiletteurs', 
+                'boarding': 'pensions'
+            };
+            
+            const pets = {
+                'all': 'Tous les animaux',
+                'dog': 'Chiens',
+                'cat': 'Chats',
+                'bird': 'Oiseaux',
+                'rabbit': 'Lapins',
+                'rodent': 'Rongeurs',
+                'reptile': 'Reptiles',
+                'other': 'Autres animaux'
+            };
+            
+            alert(`Recherche de ${services[currentService]} à ${location} pour ${pets[petType].toLowerCase()}`);
+            
+            // Ici, vous ferez un appel API pour récupérer les résultats
+        }
+        
+        function applyAdvancedSearch() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('advancedSearch'));
+            modal.hide();
+            alert('Filtres avancés appliqués !');
+        }
+        
+        // Gestion du formulaire de contact
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Récupération des données
+            const formData = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                petType: document.getElementById('petType').value,
+                service: document.getElementById('service').value,
+                message: document.getElementById('message').value
+            };
+            
+            // Simulation d'envoi
+            console.log('Formulaire de contact envoyé:', formData);
+            
+            // Message de succès
+            alert('Merci ! Votre message a été envoyé. Nous vous répondrons dans les plus brefs délais.');
+            
+            // Réinitialisation du formulaire
+            this.reset();
+        });
+        
+        // Fonction pour ouvrir Google Maps
+        function openMap() {
+            window.open('https://www.google.com/maps?q=Paris,France', '_blank');
+        }
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialiser le service par défaut
+            filterService('vet');
+            
+            // Recherche sur Entrée
+            document.getElementById('locationInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchServices();
+                }
+            });
+            
+            // Initialiser l'état actif de la navbar
+            updateActiveNavLink();
+        });
+    </script>
+</body>
+</html>
