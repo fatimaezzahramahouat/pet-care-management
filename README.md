@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Pet Care Management System
 
 A full-stack web application for managing pet care services, featuring authentication, search, favorites, and automation integration.
@@ -72,3 +73,6 @@ npm start
 1. Install Vercel CLI: `npm i -g vercel`
 2. Run `vercel`.
 3. Set Environment Variables in Vercel Dashboard.
+=======
+"# pet-care-management" 
+>>>>>>> 81cb50cf192793eef6ddf3c48ea632b648e9c262
