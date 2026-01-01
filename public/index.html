@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services Animaliers - Pet Management</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <!-- Votre CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Styles pour les cartes */
+        .hover-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+        .btn-close-sm {
+            font-size: 0.5rem;
+            padding: 0.25rem;
+        }
+        #activeFilters .badge {
+            padding: 0.5rem 0.75rem;
+        }
+        .navbar-custom {
+            background-color: rgba(255, 255, 255, 0.95);
+            transition: all 0.3s ease;
+        }
+        .navbar-custom.scrolled {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Barre de navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top py-3">
+        <div class="container">
+            <!-- Logo -->
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                     style="width: 40px; height: 40px; margin-right: 10px;">
+                    <i class="bi bi-heart-pulse fs-5"></i>
+                </div>
+                <span class="logo-text fs-4">Pet Management</span>
+            </a>
+            
+            <!-- Bouton hamburger pour mobile -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Menu -->
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <!-- Liens de navigation -->
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" href="#services">
+                            <i class="bi bi-list-check me-1"></i> Services
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" href="#contactSection">
+                            <i class="bi bi-telephone me-1"></i> Contact
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#loginModal">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Connexion
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">
+                            <i class="bi bi-person-plus me-1"></i> Inscription
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- SECTION SERVICES -->
+    <section id="services" class="py-5" style="background-color: rgb(161 158 161);">
+        <div class="container">
+
+            <!-- Titre -->
+            <div class="text-center mb-5">
+               
+                <!-- Image Banner -->
+                <div class="row mb-5">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-lg overflow-hidden">
+                            <img src="assets/Gemini_Generated_Image_hqk834hqk834hqk8.png" 
+                                 class="card-img-top" 
+                                 alt="Services pour animaux de compagnie"
+                                 style="height: 300px; object-fit: cover;">
+                            <div class="card-img-overlay d-flex align-items-center justify-content-center" 
+                                 style="background: rgba(0, 0, 0, 0.4);">
+                                <div class="text-white text-center">
+                                    <h3 class="display-5 fw-bold mb-3">Vos animaux méritent le meilleur</h3>
+                                    <p class="lead mb-0">Découvrez des professionnels qualifiés près de chez vous</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Container de recherche -->
+                <div class="card shadow-lg border-0 mb-5">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <!-- Je recherche... -->
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column">
+                                    <label class="form-label fw-bold mb-2">
+                                        <i class="bi bi-search me-2"></i>Je recherche...
+                                    </label>
+                                    <div class="btn-group-vertical" role="group">
+                                        <button type="button" class="btn btn-outline-primary text-start mb-2 active" 
+                                                onclick="filterService('vet')" id="vetBtn">
+                                            <i class="bi bi-heart-pulse me-2"></i>Vétérinaires
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary text-start mb-2"
+                                                onclick="filterService('grooming')" id="groomingBtn">
+                                            <i class="bi bi-scissors me-2"></i>Toiletteurs
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary text-start"
+                                                onclick="filterService('boarding')" id="boardingBtn">
+                                            <i class="bi bi-house-heart me-2"></i>Pensions
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary text-start mt-2"
+                                                onclick="filterService('all')" id="allBtn">
+                                            <i class="bi bi-list me-2"></i>Tous les services
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Près de moi -->
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column">
+                                    <label class="form-label fw-bold mb-2">
+                                        <i class="bi bi-geo-alt me-2"></i>Près de moi
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="bi bi-geo-fill"></i>
+                                        </span>
+                                        <input type="text" class="form-control" 
+                                               id="locationInput" 
+                                               placeholder="Entrez une ville ou code postal">
+                                    </div>
+                                    <button class="btn btn-link text-decoration-none p-0 mt-2" 
+                                            onclick="useCurrentLocation()">
+                                        <i class="bi bi-crosshair me-1"></i>Utiliser ma position actuelle
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Type d'animal -->
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column">
+                                    <label class="form-label fw-bold mb-2">
+                                        <i class="bi bi-heart me-2"></i>Mon animal
+                                    </label>
+                                    <select class="form-select" id="petTypeSelect">
+                                        <option value="all">Tous les animaux</option>
+                                        <option value="dog">🐶 Chien</option>
+                                        <option value="cat">🐱 Chat</option>
+                                        <option value="bird">🐦 Oiseau</option>
+                                        <option value="rabbit">🐰 Lapin</option>
+                                        <option value="rodent">🐹 Rongeur</option>
+                                        <option value="reptile">🦎 Reptile</option>
+                                        <option value="other">🐾 Autre</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Bouton Rechercher -->
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column h-100 justify-content-end">
+                                    <button class="btn btn-primary btn-lg w-100 py-3" onclick="searchServices()" id="searchBtn">
+                                        <i class="bi bi-search me-2"></i>Rechercher
+                                    </button>
+                                    <button class="btn btn-link text-decoration-none mt-2" data-bs-toggle="modal" data-bs-target="#advancedSearch">
+                                        <i class="bi bi-filter me-1"></i>Recherche avancée
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Filtres actifs -->
+                        <div id="activeFilters" class="mt-3 d-none">
+                            <div class="d-flex align-items-center">
+                                <small class="text-muted me-2">Filtres actifs:</small>
+                                <div id="filterTags" class="d-flex flex-wrap gap-2"></div>
+                                <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="clearFilters()">
+                                    <i class="bi bi-x-circle me-1"></i>Effacer tous les filtres
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Résultats de recherche -->
+                <div id="servicesResults" class="row g-4 mt-3">
+                    <!-- Les cartes seront chargées dynamiquement -->
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Chargement...</span>
+                        </div>
+                        <h5 class="text-white">Chargement des services...</h5>
+                    </div>
+                </div>
+                
+                <!-- Bouton Ajouter un service -->
+                <div class="text-center mt-5">
+                    <button class="btn btn-success btn-lg" onclick="openAddServiceModal()">
+                        <i class="bi bi-plus-circle me-2"></i>Ajouter un service
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION CONTACT -->
+    <section id="contactSection" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold text-primary">Contactez-nous</h2>
+                <p class="lead">Nous sommes là pour répondre à vos questions sur nos services animaliers</p>
+            </div>
+
+            <div class="row">
+                <!-- Formulaire de contact -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card shadow border-0">
+                        <div class="card-body p-4">
+                            <h3 class="card-title mb-4">Envoyez-nous un message</h3>
+                            
+                            <form id="contactForm">
+                                <!-- Nom et Prénom -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="firstName" class="form-label">Prénom *</label>
+                                        <input type="text" class="form-control" id="firstName" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="lastName" class="form-label">Nom *</label>
+                                        <input type="text" class="form-control" id="lastName" required>
+                                    </div>
+                                </div>
+                                
+                                <!-- Email et Téléphone -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label">Email *</label>
+                                        <input type="email" class="form-control" id="email" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="phone" class="form-label">Téléphone</label>
+                                        <input type="tel" class="form-control" id="phone">
+                                    </div>
+                                </div>
+                                
+                                <!-- Type d'animal -->
+                                <div class="mb-3">
+                                    <label for="petType" class="form-label">Type d'animal</label>
+                                    <select class="form-select" id="contactPetType">
+                                        <option value="">Sélectionnez un type</option>
+                                        <option value="dog">Chien</option>
+                                        <option value="cat">Chat</option>
+                                        <option value="bird">Oiseau</option>
+                                        <option value="reptile">Reptile</option>
+                                        <option value="other">Autre</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Service concerné -->
+                                <div class="mb-3">
+                                    <label for="service" class="form-label">Service concerné *</label>
+                                    <select class="form-select" id="service" required>
+                                        <option value="">Choisissez un service</option>
+                                        <option value="vet">Vétérinaire</option>
+                                        <option value="grooming">Toilettage</option>
+                                        <option value="boarding">Pension</option>
+                                        <option value="training">Éducation</option>
+                                        <option value="other">Autre demande</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Message -->
+                                <div class="mb-3">
+                                    <label for="message" class="form-label">Message *</label>
+                                    <textarea class="form-control" id="message" rows="5" required 
+                                              placeholder="Décrivez votre demande en détail..."></textarea>
+                                </div>
+                                
+                                <!-- Bouton d'envoi -->
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-send me-2"></i> Envoyer le message
+                                    </button>
+                                </div>
+                                
+                                <div class="mt-3 text-muted">
+                                    <small>* Champs obligatoires</small>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Informations de contact -->
+                <div class="col-lg-4">
+                    <!-- Carte de contact -->
+                    <div class="card shadow border-0 mb-4">
+                        <div class="card-body p-4">
+                            <h4 class="card-title mb-4">Nos coordonnées</h4>
+                            
+                            <!-- Adresse -->
+                            <div class="d-flex mb-4">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-geo-alt text-primary fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="fw-bold">Adresse</h6>
+                                    <p class="mb-0">
+                                        123 Rue des Animaux<br>
+                                        75000 Paris, France
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Téléphone -->
+                            <div class="d-flex mb-4">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-telephone text-primary fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="fw-bold">Téléphone</h6>
+                                    <p class="mb-0">+33 1 23 45 67 89</p>
+                                    <small class="text-muted">Lun-Ven: 9h-18h</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Email -->
+                            <div class="d-flex mb-4">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-envelope text-primary fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="fw-bold">Email</h6>
+                                    <p class="mb-0">contact@petservices.fr</p>
+                                    <small class="text-muted">Réponse sous 24h</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Urgences -->
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-heart-pulse text-danger fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="fw-bold text-danger">Urgences vétérinaires</h6>
+                                    <p class="mb-0">+33 1 23 45 67 90</p>
+                                    <small class="text-muted">24h/24, 7j/7</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ -->
+                    <div class="card shadow border-0">
+                        <div class="card-body p-4">
+                            <h4 class="card-title mb-4">Questions fréquentes</h4>
+                            
+                            <div class="accordion" id="faqAccordion">
+                                <!-- FAQ 1 -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                            Comment prendre rendez-vous ?
+                                        </button>
+                                    </h2>
+                                    <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body">
+                                            Vous pouvez prendre rendez-vous en ligne, par téléphone, ou directement via notre formulaire de contact.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- FAQ 2 -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                            Quels animaux acceptez-vous ?
+                                        </button>
+                                    </h2>
+                                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body">
+                                            Nous acceptons chiens, chats, oiseaux, rongeurs et petits reptiles.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- FAQ 3 -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                            Puis-je annuler un rendez-vous ?
+                                        </button>
+                                    </h2>
+                                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body">
+                                            Oui, gratuitement jusqu'à 24h avant le rendez-vous.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carte Google Maps -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card shadow border-0">
+                        <div class="card-body p-0">
+                            <div class="p-4">
+                                <h4 class="card-title mb-0">Nous trouver</h4>
+                            </div>
+                            <!-- Carte placeholder -->
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
+                                <div class="text-center">
+                                    <i class="bi bi-map fs-1 text-muted mb-3"></i>
+                                    <h5>Carte interactive</h5>
+                                    <p class="text-muted">Localisation de nos services</p>
+                                    <button class="btn btn-outline-primary" onclick="openMap()">
+                                        <i class="bi bi-geo-alt me-2"></i>Ouvrir dans Google Maps
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL RECHERCHE AVANCÉE -->
+    <div class="modal fade" id="advancedSearch" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Recherche avancée</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rayon de recherche</label>
+                            <select class="form-select" id="radiusSelect">
+                                <option value="5">5 km</option>
+                                <option value="10" selected>10 km</option>
+                                <option value="20">20 km</option>
+                                <option value="50">50 km</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Note minimum</label>
+                            <select class="form-select" id="ratingSelect">
+                                <option value="0">Toutes notes</option>
+                                <option value="3">3 étoiles et plus</option>
+                                <option value="4" selected>4 étoiles et plus</option>
+                                <option value="5">5 étoiles uniquement</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ouvert maintenant</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="openNow">
+                                <label class="form-check-label" for="openNow">
+                                    Afficher uniquement les services ouverts
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Services d'urgence</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="emergency">
+                                <label class="form-check-label" for="emergency">
+                                    Services d'urgence 24h/24
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="applyAdvancedSearch()">Appliquer les filtres</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AJOUTER SERVICE -->
+    <div class="modal fade" id="addServiceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter un nouveau service</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addServiceForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nom du service *</label>
+                                <input type="text" class="form-control" name="nom" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Type de service *</label>
+                                <select class="form-select" name="type" required>
+                                    <option value="">Sélectionnez un type</option>
+                                    <option value="vet">Vétérinaire</option>
+                                    <option value="grooming">Toilettage</option>
+                                    <option value="boarding">Pension</option>
+                                    <option value="training">Éducation</option>
+                                    <option value="walking">Promenade</option>
+                                    <option value="other">Autre</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ville *</label>
+                                <input type="text" class="form-control" name="ville" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tarifs (€) *</label>
+                                <input type="number" step="0.01" class="form-control" name="tarifs" required>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Services proposés *</label>
+                                <textarea class="form-control" name="services" rows="3" required 
+                                          placeholder="Décrivez les services proposés..."></textarea>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Horaires *</label>
+                                <input type="text" class="form-control" name="horaires" 
+                                       placeholder="Ex: Lun-Ven: 9h-18h, Sam: 9h-12h" required>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Statut</label>
+                                <select class="form-select" name="statut">
+                                    <option value="en_attente">En attente</option>
+                                    <option value="actif">Actif</option>
+                                    <option value="inactif">Inactif</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Image du service</label>
+                                <input type="file" class="form-control" name="image" accept="image/*" id="imageInput">
+                                <small class="text-muted">Formats acceptés: JPG, PNG, GIF (max 5MB)</small>
+                                <div id="imagePreview" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-success">Ajouter le service</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONNEXION -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Connexion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Se connecter</button>
+                    </form>
+                    <div class="text-center mt-3">
+                        <small>Pas encore de compte ? <a href="#" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#registerModal">S'inscrire</a></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INSCRIPTION -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Inscription</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label class="form-label">Nom complet</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Créer mon compte</button>
+                    </form>
+                    <div class="text-center mt-3">
+                        <small>Déjà un compte ? <a href="#" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#loginModal">Se connecter</a></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIED DE PAGE -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Pet Management</h5>
+                    <p>Trouvez les meilleurs services pour vos animaux de compagnie.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Liens rapides</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#services" class="text-white-50 text-decoration-none">Services</a></li>
+                        <li><a href="#contactSection" class="text-white-50 text-decoration-none">Contact</a></li>
+                        <li><a href="#" class="text-white-50 text-decoration-none" data-bs-toggle="modal" data-bs-target="#loginModal">Connexion</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Suivez-nous</h5>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white"><i class="bi bi-facebook fs-5"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-instagram fs-5"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-twitter fs-5"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="bg-white my-4">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2024 Pet Management. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Votre JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html> 
