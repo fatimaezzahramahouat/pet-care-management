@@ -8,6 +8,324 @@ let allServices = []; // Pour stocker tous les services
 const API_URL = 'http://localhost:5000/api';
 
 // ===============================
+// FAVORITES FUNCTIONS
+// ===============================
+
+// Récupérer l'ID utilisateur (à adapter selon votre système d'authentification)
+function getCurrentUserId() {
+    // Pour l'instant, on utilise un ID fixe
+    // À remplacer par l'ID de l'utilisateur connecté
+    return 1;
+}
+
+// Ajouter aux favoris
+async function addToFavorites(userId, serviceId) {
+    const response = await fetch(`${API_URL}/favorites`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            user_id: userId,
+            service_id: serviceId
+        })
+    });
+    
+    if (!response.ok) {
+        throw new Error('Erreur lors de l\'ajout aux favoris');
+    }
+    
+    return await response.json();
+}
+
+// Retirer des favoris
+async function removeFromFavorites(userId, serviceId) {
+    const response = await fetch(`${API_URL}/favorites`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            user_id: userId,
+            service_id: serviceId
+        })
+    });
+    
+    if (!response.ok) {
+        throw new Error('Erreur lors de la suppression des favoris');
+    }
+    
+    return await response.json();
+}
+
+// Gérer l'action de favoris avec confirmation
+async function handleFavoriteAction(serviceId, action) {
+    const userId = getCurrentUserId();
+    
+    if (!userId) {
+        alert('Veuillez vous connecter pour gérer vos favoris');
+        return;
+    }
+    
+    try {
+        if (action === 'add') {
+            await addToFavorites(userId, serviceId);
+            updateFavoriteUI(serviceId, true);
+        } else {
+            await removeFromFavorites(userId, serviceId);
+            updateFavoriteUI(serviceId, false);
+        }
+    } catch (error) {
+        console.error('Erreur lors de la modification des favoris:', error);
+        alert('Erreur lors de la modification des favoris');
+    }
+}
+
+// Mettre à jour l'interface utilisateur pour les favoris
+function updateFavoriteUI(serviceId, isFavorite) {
+    // Mettre à jour le bouton favori
+    const favoriteBtn = document.querySelector(`[data-service-id="${serviceId}"]`);
+    if (favoriteBtn) {
+        favoriteBtn.classList.toggle('btn-danger', isFavorite);
+        favoriteBtn.classList.toggle('btn-outline-danger', !isFavorite);
+        favoriteBtn.querySelector('i').className = isFavorite ? 'bi bi-heart-fill' : 'bi bi-heart';
+        favoriteBtn.title = isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris';
+        favoriteBtn.onclick = () => handleFavoriteAction(serviceId, isFavorite ? 'remove' : 'add');
+    }
+    
+    // Mettre à jour l'état dans le tableau allServices
+    const serviceIndex = allServices.findIndex(s => s.id == serviceId);
+    if (serviceIndex !== -1) {
+        allServices[serviceIndex].is_favorite = isFavorite;
+    }
+}
+
+// Consulter mes favoris
+async function viewMyFavorites() {
+    const userId = getCurrentUserId();
+    
+    if (!userId) {
+        alert('Veuillez vous connecter pour voir vos favoris');
+        return;
+    }
+    
+    try {
+        // Afficher un indicateur de chargement
+        const container = document.getElementById("servicesResults");
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Chargement...</span>
+                </div>
+                <h5 class="text-white">Chargement de vos favoris...</h5>
+            </div>
+        `;
+        
+        // Récupérer les favoris
+        const response = await fetch(`${API_URL}/favorites/${userId}`);
+        
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Erreur inconnue');
+        }
+        
+        // Transformer les données pour l'affichage
+        const favoriteServices = data.favorites.map(fav => ({
+            ...fav.services_animaliers,
+            is_favorite: true // Marquer comme favori
+        }));
+        
+        // Afficher les services favoris
+        displayServices(favoriteServices);
+        
+        // Mettre à jour le titre
+        const title = document.getElementById('servicesTitle');
+        if (title) {
+            title.textContent = 'Mes Services Favoris';
+        }
+        
+        // Afficher un bouton pour revenir à tous les services
+        const existingBackBtn = document.querySelector('.back-to-all-btn');
+        if (existingBackBtn) existingBackBtn.remove();
+        
+        container.insertAdjacentHTML('beforebegin', `
+            <div class="row mb-4 back-to-all-btn">
+                <div class="col-12">
+                    <button class="btn btn-outline-secondary" onclick="loadServicesWithFavorites()">
+                        <i class="bi bi-arrow-left me-2"></i>Retour à tous les services
+                    </button>
+                </div>
+            </div>
+        `);
+        
+    } catch (error) {
+        console.error('Erreur lors du chargement des favoris:', error);
+        showError('Erreur lors du chargement des favoris: ' + error.message);
+    }
+}
+
+// Fonction pour charger les services avec l'état des favoris
+async function loadServicesWithFavorites(type = "all", ville = "") {
+    try {
+        let url = `${API_URL}/services`;
+        const params = new URLSearchParams();
+        
+        if (type && type !== 'all') {
+            params.append('type', type);
+        }
+        
+        if (ville && ville.trim() !== '') {
+            params.append('ville', ville);
+        }
+        
+        if (params.toString()) {
+            url = `${API_URL}/services/search?${params.toString()}`;
+        }
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+        }
+        
+        const services = await response.json();
+        
+        // Si un utilisateur est connecté, récupérer ses favoris
+        const userId = getCurrentUserId();
+        if (userId) {
+            try {
+                const favResponse = await fetch(`${API_URL}/favorites/${userId}`);
+                if (favResponse.ok) {
+                    const favData = await favResponse.json();
+                    if (favData.success && favData.favorites) {
+                        // Créer un Set des IDs de services favoris
+                        const favoriteIds = new Set(
+                            favData.favorites.map(fav => fav.service_id)
+                        );
+                        
+                        // Marquer les services comme favoris
+                        services.forEach(service => {
+                            service.is_favorite = favoriteIds.has(service.id);
+                        });
+                    }
+                }
+            } catch (favError) {
+                console.error('Erreur lors du chargement des favoris:', favError);
+                // Continuer sans les informations de favoris
+            }
+        }
+        
+        // Stocker et afficher les services
+        allServices = services;
+        displayServices(services);
+        
+        // Réinitialiser le titre
+        const title = document.getElementById('servicesTitle');
+        if (title) {
+            title.textContent = 'Nos Services';
+        }
+        
+        // Supprimer le bouton retour s'il existe
+        const backBtn = document.querySelector('.back-to-all-btn');
+        if (backBtn) backBtn.remove();
+        
+    } catch (error) {
+        console.error('Erreur détaillée lors du chargement des services:', error);
+        showError(`Impossible de charger les services: ${error.message}`);
+    }
+}
+
+// ===============================
+// DISPLAY SERVICES FUNCTION
+// ===============================
+function displayServices(services) {
+    const container = document.getElementById("servicesResults");
+    
+    if (!services || services.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-search fs-1 text-muted mb-3"></i>
+                <h4 class="text-white">Aucun service trouvé</h4>
+                <p class="text-white">Essayez de modifier vos critères de recherche ou ajoutez un service !</p>
+                <button class="btn btn-success mt-3" onclick="openAddServiceModal()">
+                    <i class="bi bi-plus-circle me-2"></i>Ajouter un service
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = services.map(service => `
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100 hover-card">
+                <div class="card-img-top position-relative" style="height:200px; overflow:hidden">
+                    <img 
+                        src="${service.image ? service.image : getDefaultImageForService(service.type)}"
+                        class="w-100 h-100"
+                        style="object-fit:cover"
+                        alt="${service.nom}"
+                        onerror="this.src='${getDefaultImageForService(service.type)}'"
+                    >
+                    <span class="position-absolute top-0 end-0 m-2 badge ${getServiceBadgeClass(service.type)}">
+                        ${getServiceTypeLabel(service.type)}
+                    </span>
+                    ${service.statut && service.statut !== 'actif' ?
+                        `<span class="position-absolute top-0 start-0 m-2 badge bg-warning">
+                            ${service.statut === 'inactif' ? 'Inactif' : 'En attente'}
+                        </span>` : ''
+                    }
+                    <!-- BOUTON FAVORI -->
+                    <button class="position-absolute bottom-0 end-0 m-2 btn btn-sm ${service.is_favorite ? 'btn-danger' : 'btn-outline-danger'}"
+                            data-service-id="${service.id}"
+                            onclick="handleFavoriteAction(${service.id}, '${service.is_favorite ? 'remove' : 'add'}')"
+                            title="${service.is_favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}">
+                        <i class="bi ${service.is_favorite ? 'bi-heart-fill' : 'bi-heart'}"></i>
+                    </button>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">${service.nom || 'Sans nom'}</h5>
+                    <p class="text-muted mb-1">
+                        <i class="bi bi-geo-alt"></i> ${service.ville || 'Non spécifié'}
+                    </p>
+                    <p class="mb-2"><strong>${getServiceTypeLabel(service.type)}</strong></p>
+                    <p class="mb-2 small">${service.services ? service.services.substring(0, 120) : 'Pas de description'}${service.services && service.services.length > 120 ? '...' : ''}</p>
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-primary">${parseFloat(service.tarifs || 0).toFixed(2)} €</span>
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i> ${service.horaires || 'Non spécifié'}
+                            </small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary btn-sm flex-fill" onclick="viewService(${service.id})">
+                                <i class="bi bi-eye me-1"></i>Voir
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm" onclick="editService(${service.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteService(${service.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    // Appliquer la pagination après l'affichage
+    if (container.children.length > 0) {
+        currentPage = 1;
+        paginateServices();
+    }
+}
+
+// ===============================
 // SEARCH FUNCTIONS
 // ===============================
 function filterService(serviceType) {
@@ -53,48 +371,8 @@ async function searchServices() {
     `;
     
     try {
-        // Construire l'URL de recherche
-        let url = `${API_URL}/services/search`;
-        const params = new URLSearchParams();
-        
-        if (currentService && currentService !== 'all') {
-            params.append('type', currentService);
-        }
-        
-        if (ville && ville.trim() !== '') {
-            params.append('ville', ville);
-        }
-        
-        if (params.toString()) {
-            url = `${API_URL}/services/search?${params.toString()}`;
-        }
-        
-        console.log('Recherche avec URL:', url);
-        
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-        
-        const services = await response.json();
-        console.log('Services trouvés:', services);
-        
-        // Si nous avons des services, les filtrer par type d'animal si nécessaire
-        let filteredServices = services;
-        
-        if (petType !== 'all' && services.length > 0) {
-            console.log('Filtrage par type d\'animal:', petType);
-            // Pour l'instant, on affiche tous les services
-            // Vous pourrez implémenter ce filtre plus tard
-        }
-        
-        // Mettre à jour les filtres actifs
+        await loadServicesWithFavorites(currentService, ville);
         updateActiveFilters();
-        
-        // Afficher les résultats
-        displayServices(filteredServices);
-        
     } catch (error) {
         console.error('Erreur lors de la recherche:', error);
         showError('Erreur lors de la recherche: ' + error.message);
@@ -196,7 +474,7 @@ function clearFilters() {
     currentPetType = 'all';
     
     // Recharger tous les services
-    loadServices();
+    loadServicesWithFavorites();
     
     // Cacher les filtres actifs
     const activeFiltersDiv = document.getElementById('activeFilters');
@@ -212,6 +490,7 @@ function getServiceIcon(serviceType) {
         'boarding': 'bi-house-heart',
         'training': 'bi-book',
         'walking': 'bi-walking',
+        'walk': 'bi-walking',
         'other': 'bi-three-dots'
     };
     return icons[serviceType] || 'bi-three-dots';
@@ -234,114 +513,8 @@ function getPetTypeLabel(petType) {
 // SERVICES FUNCTIONS
 // ===============================
 async function loadServices(type = "all", ville = "") {
-    try {
-        console.log('Chargement des services...');
-        
-        let url = `${API_URL}/services`;
-        const params = new URLSearchParams();
-        
-        if (type && type !== 'all') {
-            params.append('type', type);
-        }
-        
-        if (ville && ville.trim() !== '') {
-            params.append('ville', ville);
-        }
-        
-        if (params.toString()) {
-            url = `${API_URL}/services/search?${params.toString()}`;
-        }
-        
-        console.log('URL appelée:', url);
-        
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
-        }
-        
-        const services = await response.json();
-        console.log('Services reçus:', services);
-        
-        // Stocker tous les services pour les filtres locaux
-        allServices = services;
-        
-        // Afficher les services
-        displayServices(services);
-        
-    } catch (error) {
-        console.error('Erreur détaillée lors du chargement des services:', error);
-        showError(`Impossible de charger les services: ${error.message}`);
-    }
-}
-
-function displayServices(services) {
-    const container = document.getElementById("servicesResults");
-    
-    if (!services || services.length === 0) {
-        container.innerHTML = `
-            <div class="col-12 text-center py-5">
-                <i class="bi bi-search fs-1 text-muted mb-3"></i>
-                <h4 class="text-white">Aucun service trouvé</h4>
-                <p class="text-white">Essayez de modifier vos critères de recherche ou ajoutez un service !</p>
-                <button class="btn btn-success mt-3" onclick="openAddServiceModal()">
-                    <i class="bi bi-plus-circle me-2"></i>Ajouter un service
-                </button>
-            </div>
-        `;
-        return;
-    }
-    
-    container.innerHTML = services.map(service => `
-        <div class="col-md-4 mb-4">
-            <div class="card shadow h-100 hover-card">
-                <div class="card-img-top position-relative" style="height:200px; overflow:hidden">
-                    <img 
-                        src="${service.image ? service.image : getDefaultImageForService(service.type)}"
-                        class="w-100 h-100"
-                        style="object-fit:cover"
-                        alt="${service.nom}"
-                        onerror="this.src='${getDefaultImageForService(service.type)}'"
-                    >
-                    <span class="position-absolute top-0 end-0 m-2 badge ${getServiceBadgeClass(service.type)}">
-                        ${getServiceTypeLabel(service.type)}
-                    </span>
-                    ${service.statut && service.statut !== 'actif' ?
-                        `<span class="position-absolute top-0 start-0 m-2 badge bg-warning">
-                            ${service.statut === 'inactif' ? 'Inactif' : 'En attente'}
-                        </span>` : ''
-                    }
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">${service.nom || 'Sans nom'}</h5>
-                    <p class="text-muted mb-1">
-                        <i class="bi bi-geo-alt"></i> ${service.ville || 'Non spécifié'}
-                    </p>
-                    <p class="mb-2"><strong>${getServiceTypeLabel(service.type)}</strong></p>
-                    <p class="mb-2 small">${service.services ? service.services.substring(0, 120) : 'Pas de description'}${service.services && service.services.length > 120 ? '...' : ''}</p>
-                    <div class="mt-auto">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold text-primary">${parseFloat(service.tarifs || 0).toFixed(2)} €</span>
-                            <small class="text-muted">
-                                <i class="bi bi-clock"></i> ${service.horaires || 'Non spécifié'}
-                            </small>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-primary btn-sm flex-fill" onclick="viewService(${service.id})">
-                                <i class="bi bi-eye me-1"></i>Voir
-                            </button>
-                            <button class="btn btn-outline-warning btn-sm" onclick="editService(${service.id})">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="deleteService(${service.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `).join('');
+    // Utiliser la nouvelle fonction avec favoris
+    await loadServicesWithFavorites(type, ville);
 }
 
 function getDefaultImageForService(serviceType) {
@@ -391,7 +564,7 @@ function showError(message) {
             <i class="bi bi-exclamation-triangle fs-1 text-danger mb-3"></i>
             <h4 class="text-danger">Erreur</h4>
             <p class="text-white">${message}</p>
-            <button class="btn btn-outline-primary mt-2" onclick="loadServices()">
+            <button class="btn btn-outline-primary mt-2" onclick="loadServicesWithFavorites()">
                 <i class="bi bi-arrow-clockwise me-1"></i>Réessayer
             </button>
         </div>
@@ -769,13 +942,64 @@ document.getElementById("contactForm").addEventListener("submit", function (e) {
 });
 
 // ===============================
+// PAGINATION
+// ===============================
+let currentPage = 1;
+const itemsPerPage = 6;
+
+function paginateServices() {
+  const container = document.getElementById("servicesResults");
+  if (!container) return;
+
+  const cards = Array.from(container.children)
+    .filter(el => el.className.includes("col-"));
+
+  const totalPages = Math.ceil(cards.length / itemsPerPage);
+
+  cards.forEach((card, index) => {
+    card.style.display =
+      index >= (currentPage - 1) * itemsPerPage &&
+      index < currentPage * itemsPerPage
+        ? "block"
+        : "none";
+  });
+
+  document.getElementById("pageIndicator").innerText =
+    `Page ${currentPage} / ${totalPages}`;
+
+  document.getElementById("prevPage").disabled = currentPage === 1;
+  document.getElementById("nextPage").disabled = currentPage === totalPages || totalPages === 0;
+}
+
+document.getElementById("nextPage").addEventListener("click", () => {
+  currentPage++;
+  paginateServices();
+});
+
+document.getElementById("prevPage").addEventListener("click", () => {
+  currentPage--;
+  paginateServices();
+});
+
+const container = document.getElementById("servicesResults");
+const observer = new MutationObserver(() => {
+  if (container.children.length > 0) {
+    currentPage = 1;
+    paginateServices();
+    observer.disconnect();
+  }
+});
+
+observer.observe(container, { childList: true });
+
+// ===============================
 // EVENT LISTENERS & INITIALIZATION
 // ===============================
 document.addEventListener('DOMContentLoaded', function () {
     console.log('Page chargée, initialisation...');
     
-    // Load initial services
-    loadServices();
+    // Load initial services with favorites
+    loadServicesWithFavorites();
     
     // Set default active button
     const defaultBtn = document.querySelector('.btn-group-vertical .btn.active');
@@ -867,6 +1091,9 @@ function updateActiveNavLink() {
     });
 }
 
+// ===============================
+// SCROLL EVENT
+// ===============================
 window.addEventListener('scroll', function () {
     const navbar = document.querySelector('.navbar-custom');
     if (navbar) {

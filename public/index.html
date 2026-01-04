@@ -70,6 +70,17 @@
                             <i class="bi bi-telephone me-1"></i> Contact
                         </a>
                     </li>
+                  <li class="nav-item2">
+    <a class="nav-link text-dark" href="#scraping">
+        <i class="fas fa-database"></i> Scraping Data
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="javascript:void(0)" onclick="viewMyFavorites()">
+        <i class="bi bi-heart"></i> Mes Favoris
+    </a>
+</li>
+
                     <li class="nav-item">
                         <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#loginModal">
                             <i class="bi bi-box-arrow-in-right me-1"></i> Connexion
@@ -96,7 +107,7 @@
                 <div class="row mb-5">
                     <div class="col-12">
                         <div class="card border-0 shadow-lg overflow-hidden">
-                            <img src="assets/Gemini_Generated_Image_hqk834hqk834hqk8.png" 
+                            <img src="https://images.unsplash.com/photo-1560743641-3914f2c45636?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" 
                                  class="card-img-top" 
                                  alt="Services pour animaux de compagnie"
                                  style="height: 300px; object-fit: cover;">
@@ -110,7 +121,9 @@
                         </div>
                     </div>
                 </div>
-                
+    
+
+
                 <!-- Container de recherche -->
                 <div class="card shadow-lg border-0 mb-5">
                     <div class="card-body p-4">
@@ -207,9 +220,18 @@
                         </div>
                     </div>
                 </div>
-                
+                  <!-- Bouton Ajouter un service -->
+                <div class="text-center mt-5">
+                    <button class="btn btn-success btn-lg" onclick="openAddServiceModal()">
+                        <i class="bi bi-plus-circle me-2"></i>Ajouter un service
+
+
+                </div>
+
+     
                 <!-- Résultats de recherche -->
                 <div id="servicesResults" class="row g-4 mt-3">
+
                     <!-- Les cartes seront chargées dynamiquement -->
                     <div class="col-12 text-center py-5">
                         <div class="spinner-border text-primary mb-3" role="status">
@@ -218,17 +240,188 @@
                         <h5 class="text-white">Chargement des services...</h5>
                     </div>
                 </div>
-                
-                <!-- Bouton Ajouter un service -->
-                <div class="text-center mt-5">
-                    <button class="btn btn-success btn-lg" onclick="openAddServiceModal()">
-                        <i class="bi bi-plus-circle me-2"></i>Ajouter un service
-                    </button>
-                </div>
+                <!-- pagination-->
+
+
+<div class="d-flex justify-content-center align-items-center gap-3 mt-4" id="pagination">
+    <button class="btn btn-outline-primary" id="prevPage">⬅ Previous</button>
+    <span id="pageIndicator" class="fw-bold text-white"></span>
+    <button class="btn btn-outline-primary" id="nextPage">Next ➡</button>
+</div>     
             </div>
         </div>
     </section>
 
+ <!-- Formulaire de Scraping -->
+            <section class="scraping-section" id="scraping">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-search"></i> Scraping Vétérinaires</h2>
+                        <p>Remplissez le formulaire pour rechercher des vétérinaires sur Google Maps</p>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Formulaire -->
+                        <form id="scrapingForm">
+                            <div class="form-grid">
+                                <!-- Colonne 1 -->
+                                <div class="form-column">
+                                    <div class="form-group">
+                                        <label for="nom">
+                                            <i class="fas fa-user"></i> Votre Nom
+                                        </label>
+                                        <input type="text" id="nom" placeholder="Votre nom complet" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="email">
+                                            <i class="fas fa-envelope"></i> Email
+                                        </label>
+                                        <input type="email" id="email" placeholder="votre@email.com" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="telephone">
+                                            <i class="fas fa-phone"></i> Téléphone
+                                        </label>
+                                        <input type="tel" id="telephone" placeholder="+212 6XX XX XX XX">
+                                    </div>
+                                </div>
+                                
+                                <!-- Colonne 2 -->
+                                <div class="form-column">
+                                    <div class="form-group">
+                                        <label for="ville">
+                                            <i class="fas fa-city"></i> Ville *
+                                        </label>
+                                        <input type="text" id="ville" value="Marrakech" required>
+                                        <small>Par défaut: Marrakech. Modifiez si nécessaire</small>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="country">
+                                            <i class="fas fa-flag"></i> Pays *
+                                        </label>
+                                        <select id="country" required>
+                                            <option value="Morocco" selected>Maroc</option>
+                                            <option value="France">France</option>
+                                            <option value="Spain">Espagne</option>
+                                            <option value="USA">États-Unis</option>
+                                            <option value="Canada">Canada</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="maxLeads">
+                                            <i class="fas fa-list-ol"></i> Nombre de résultats
+                                        </label>
+                                        <input type="range" id="maxLeads" min="5" max="50" value="20">
+                                        <div class="range-value">
+                                            <span id="rangeValue">20</span> vétérinaires maximum
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Bouton de soumission -->
+                            <div class="form-actions">
+                                <button type="submit" class="btn-scrape" id="scrapeBtn">
+                                    <i class="fas fa-bolt"></i> Lancer le Scraping
+                                </button>
+                                
+                                <button type="button" class="btn-secondary" id="resetBtn">
+                                    <i class="fas fa-redo"></i> Réinitialiser
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <!-- Résultats/Statut -->
+                        <div id="resultSection" class="hidden">
+                            <div class="result-card">
+                                <div class="result-header">
+                                    <h3><i class="fas fa-spinner fa-spin"></i> Scraping en cours...</h3>
+                                </div>
+                                <div class="result-body">
+                                    <div class="progress-container">
+                                        <div class="progress-bar" id="progressBar"></div>
+                                    </div>
+                                    <p id="statusMessage">Initialisation du scraping...</p>
+                                    
+                                    <div class="result-details">
+                                        <div class="detail-item">
+                                            <i class="fas fa-id-badge"></i>
+                                            <span>Job ID: <strong id="jobId">--</strong></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <span>Localisation: <strong id="location">--</strong></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <i class="fas fa-clock"></i>
+                                            <span>Durée estimée: <strong>2-3 minutes</strong></span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="result-actions">
+                                        <button class="btn-sheet hidden" id="openSheetBtn">
+                                            <i class="fas fa-file-excel"></i> Ouvrir Google Sheet
+                                        </button>
+                                        <button class="btn-refresh" id="refreshBtn">
+                                            <i class="fas fa-sync-alt"></i> Vérifier le statut
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Instructions -->
+            <section class="instructions-section">
+                <div class="card">
+                    <h3><i class="fas fa-info-circle"></i> Comment ça marche ?</h3>
+                    <ol class="steps">
+                        <li><strong>Remplissez le formulaire</strong> avec la ville souhaitée</li>
+                        <li><strong>Cliquez sur "Lancer le Scraping"</strong> pour démarrer la recherche</li>
+                        <li><strong>n8n va automatiquement</strong> scraper Google Maps</li>
+                        <li><strong>Les données sont sauvegardées</strong> dans Google Sheets</li>
+                        <li><strong>Téléchargez les résultats</strong> au format Excel</li>
+                    </ol>
+                    
+                    <div class="features">
+                        <div class="feature">
+                            <i class="fas fa-shield-alt"></i>
+                            <h4>Sécurisé</h4>
+                            <p>Données cryptées et traitement sécurisé</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-bolt"></i>
+                            <h4>Rapide</h4>
+                            <p>Scraping optimisé et parallélisé</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-database"></i>
+                            <h4>Complet</h4>
+                            <p>Toutes les informations vétérinaires</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Système de Gestion Pet Care © 2024 - Scraping automatisé avec n8n & Node.js</p>
+            <p class="tech-stack">
+                <span class="tech-tag">Node.js</span>
+                <span class="tech-tag">Express</span>
+                <span class="tech-tag">n8n</span>
+                <span class="tech-tag">Google Sheets</span>
+                <span class="tech-tag">SerpAPI</span>
+            </p>
+        </footer>
+    </div>
     <!-- SECTION CONTACT -->
     <section id="contactSection" class="py-5 bg-light">
         <div class="container">
@@ -575,6 +768,8 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                         <button type="submit" class="btn btn-success">Ajouter le service</button>
+                        
+
                     </div>
                 </form>
             </div>
@@ -678,5 +873,6 @@
     
     <!-- Votre JavaScript -->
     <script src="script.js"></script>
+    <script src="app.js"></script>
 </body>
 </html> 
