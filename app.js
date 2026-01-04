@@ -305,60 +305,103 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // FAVORITES ROUTES
-app.get('/api/favorites/:userId', async (req, res) => {
-    const { userId } = req.params;
-    
-    try {
-        const { data, error } = await supabase
-            .from('favorites')
-            .select(`
-                *,
-                services_animaliers (*)
-            `)
-            .eq('user_id', userId);
-
-        if (error) throw error;
-        res.json(data);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
+// POST - Ajouter un favori (avec meilleure gestion des doublons)
 app.post('/api/favorites', async (req, res) => {
     const { user_id, service_id } = req.body;
     
     try {
-        const { data, error } = await supabase
-            .from('favorites')
-            .insert([{ user_id, service_id }])
-            .select();
+        // Vérifier si l'utilisateur existe
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', user_id)
+            .single();
 
-        if (error) throw error;
-        res.json({ success: true, favorite: data[0] });
+        if (userError || !user) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Utilisateur non trouvé' 
+            });
+        }
+
+        // Vérifier si le service existe
+        const { data: service, error: serviceError } = await supabase
+            .from('services_animaliers')
+            .select('id')
+            .eq('id', service_id)
+            .single();
+
+        if (serviceError || !service) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Service non trouvé' 
+            });
+        }
+
+        // Vérifier si le favori existe déjà
+        const { data: existing, error: checkError } = await supabase
+            .from('favorites')
+            .select('id')
+            .eq('user_id', user_id)
+            .eq('service_id', service_id)
+            .maybeSingle(); // Utiliser maybeSingle au lieu de single
+
+        if (existing) {
+            // Si le favori existe déjà, renvoyer un succès (idempotent)
+            return res.json({ 
+                success: true, 
+                message: 'Ce service est déjà dans vos favoris',
+                favorite: existing,
+                already_exists: true
+            });
+        }
+
+        // Insérer le nouveau favori
+        const { data: newFavorite, error: insertError } = await supabase
+            .from('favorites')
+            .insert([{ 
+                user_id, 
+                service_id,
+                created_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+
+        if (insertError) {
+            // Si l'erreur est une violation d'unicité, c'est qu'un autre processus a inséré entre-temps
+            if (insertError.code === '23505') {
+                // Récupérer le favori existant
+                const { data: existingFavorite } = await supabase
+                    .from('favorites')
+                    .select('*')
+                    .eq('user_id', user_id)
+                    .eq('service_id', service_id)
+                    .single();
+
+                return res.json({ 
+                    success: true, 
+                    message: 'Service déjà dans les favoris',
+                    favorite: existingFavorite,
+                    already_exists: true
+                });
+            }
+            throw insertError;
+        }
+
+        res.json({ 
+            success: true, 
+            favorite: newFavorite,
+            message: 'Service ajouté aux favoris',
+            already_exists: false
+        });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, error: err.message });
+        console.error('Favorites POST error:', err);
+        res.status(500).json({ 
+            success: false, 
+            error: err.message || 'Erreur lors de l\'ajout aux favoris' 
+        });
     }
 });
-
-app.delete('/api/favorites/:id', async (req, res) => {
-    const { id } = req.params;
-    
-    try {
-        const { error } = await supabase
-            .from('favorites')
-            .delete()
-            .eq('id', id);
-
-        if (error) throw error;
-        res.json({ success: true, message: 'Favori supprimé' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
 // TEST API
 app.get('/api/test', (req, res) => {
     res.json({ 
