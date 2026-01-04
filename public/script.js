@@ -737,6 +737,10 @@ async function viewService(id) {
 }
 
 async function editService(id) {
+    if (!localStorage.getItem('token')) {
+        alert('Veuillez vous connecter pour gérer vos services');
+        return;
+    }
     try {
         // Fetch service data (use fetchWithAuth if you want to protect this too, otherwise fetch is fine for public viewing)
         const response = await fetch(`${API_URL}/services/${id}`);
@@ -795,7 +799,39 @@ async function editService(id) {
     }
 }
 
+function openAddServiceModal() {
+    if (!localStorage.getItem('token')) {
+        alert('Veuillez vous connecter pour ajouter un service');
+        return;
+    }
+    
+    // Reset form for new entry
+    const form = document.getElementById("addServiceForm");
+    if (form) {
+        form.reset();
+        delete form.dataset.editId;
+        document.querySelector('#addServiceModal .modal-title').textContent = 'Ajouter un nouveau service';
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.textContent = 'Ajouter le service';
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-success');
+        }
+        
+        // Clear image preview
+        const imagePreview = document.getElementById('imagePreview');
+        if (imagePreview) imagePreview.innerHTML = '';
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('addServiceModal'));
+    modal.show();
+}
+
 async function deleteService(id) {
+    if (!localStorage.getItem('token')) {
+        alert('Veuillez vous connecter pour supprimer un service');
+        return;
+    }
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) {
         return;
     }
