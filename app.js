@@ -234,14 +234,36 @@ app.delete('/api/services/:id', async (req, res) => {
 });
 
 // USER AUTHENTICATION ROUTES
+//register
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
+// Secret key for JWT (store in .env)
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
+const JWT_EXPIRES_IN = '1h'; // expires in 1 hour
+
 app.post('/api/auth/register', async (req, res) => {
     const { name, email, password } = req.body;
-    
+
     try {
+        // Check if user already exists
+        const { data: existingUser } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', email)
+            .single();
+
+        if (existingUser) {
+            return res.status(400).json({ success: false, error: 'Email already registered' });
+        }
+
+        // Hash password before storing
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         // First create user in Supabase Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
-            password,
+            password, // Supabase auth still needs plain password for signUp
             options: {
                 data: { name }
             }
@@ -249,58 +271,109 @@ app.post('/api/auth/register', async (req, res) => {
 
         if (authError) throw authError;
 
-        // Then insert into users table
+        // Insert into users table
         const { data, error } = await supabase
             .from('users')
             .insert([{
                 name,
                 email,
-                password: password, // Note: In production, hash this password!
+                password: hashedPassword,
                 role: 'user'
             }])
             .select();
 
         if (error) throw error;
 
-        res.json({ 
-            success: true, 
-            user: data[0],
-            auth: authData 
+        const user = data[0];
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+        );
+
+        res.status(201).json({
+            success: true,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            },
+            token
         });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
+
+
+
+//login
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    
+
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        });
-
-        if (error) throw error;
-
-        // Get user from users table
-        const { data: userData, error: userError } = await supabase
+        // 1️⃣ Get user from users table
+        const { data: user, error: userError } = await supabase
             .from('users')
             .select('*')
             .eq('email', email)
             .single();
 
-        if (userError) throw userError;
+        if (userError || !user) {
+            return res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
+        }
 
-        res.json({ 
-            success: true, 
-            user: userData,
-            session: data.session 
+        // 2️⃣ Compare hashed password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
+        }
+
+        // 3️⃣ Optional: sign in with Supabase (if needed for session)
+        // const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        // if (error) throw error;
+
+        // 4️⃣ Generate JWT
+        const token = jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+        );
+
+        // 5️⃣ Respond to client
+        res.json({
+            success: true,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            },
+            token
         });
+
     } catch (err) {
         console.error(err);
-        res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
+        res.status(500).json({ success: false, error: 'Erreur serveur, veuillez réessayer' });
+    }
+});
+//dashbord
+app.get('/api/dashboard', (req, res) => {
+    const token = req.headers['authorization']?.split(' ')[1]; // Expect "Bearer <token>"
+
+    if (!token) return res.status(401).json({ success: false, error: 'Token manquant' });
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        res.json({ success: true, message: 'Accès autorisé', user: decoded });
+    } catch (err) {
+        res.status(401).json({ success: false, error: 'Token invalide' });
     }
 });
 

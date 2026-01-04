@@ -940,6 +940,92 @@ document.getElementById("contactForm").addEventListener("submit", function (e) {
     alert('Merci ! Votre message a été envoyé. Nous vous répondrons dans les plus brefs délais.');
     this.reset();
 });
+//auth
+
+
+// ============================
+// REGISTER
+// ============================
+const registerForm = document.getElementById('registerForm');
+if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = registerForm.name.value.trim();
+        const email = registerForm.email.value.trim();
+        const password = registerForm.password.value;
+
+        try {
+            const res = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            const data = await res.json();
+
+            if (!data.success) return alert('Erreur: ' + data.error);
+
+            // Registration successful, but do NOT redirect
+            alert('Compte créé avec succès ! Veuillez vous connecter.');
+            registerForm.reset();
+        } catch (err) {
+            console.error(err);
+            alert('Erreur lors de l\'inscription');
+        }
+    });
+}
+
+// ============================
+// LOGIN
+// ============================
+const loginForm = document.getElementById('loginForm');
+if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = loginForm.email.value.trim();
+        const password = loginForm.password.value;
+
+        try {
+            const res = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+
+            if (!data.success) return alert('Erreur: ' + data.error);
+
+            // Save JWT and user info
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+
+            alert('Connexion réussie !');
+            window.location.href = 'dashboard.html'; // Redirect only after login
+        } catch (err) {
+            console.error(err);
+            alert('Erreur lors de la connexion');
+        }
+    });
+}
+
+// ============================
+// CHECK AUTHENTICATION ON DASHBOARD
+// ============================
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Vous devez vous connecter pour accéder au dashboard');
+        window.location.href = 'index.html';
+    }
+}
+
+// ============================
+// LOGOUT
+// ============================
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'index.html';
+}
 
 // ===============================
 // PAGINATION
@@ -1057,6 +1143,9 @@ document.addEventListener('DOMContentLoaded', function () {
     
     console.log('Initialisation terminée');
 });
+
+
+
 
 // ===============================
 // NAVBAR FUNCTIONS
