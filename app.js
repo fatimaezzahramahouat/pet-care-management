@@ -6,6 +6,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { createClient } = require("@supabase/supabase-js");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -15,6 +17,24 @@ const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY // Changed to anon key for most operations
 );
+
+// ----------------- JWT CONFIG -----------------
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_EXPIRES_IN = '24h';
+
+// ----------------- AUTHENTICATION MIDDLEWARE -----------------
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ success: false, error: 'Accès refusé. Veuillez vous connecter.' });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ success: false, error: 'Session expirée. Veuillez vous reconnecter.' });
+        req.user = user;
+        next();
+    });
+};
 
 // ----------------- UPLOAD IMAGES -----------------
 if (!fs.existsSync('uploads')) {
@@ -106,8 +126,8 @@ app.get('/api/services/:id', async (req, res) => {
     }
 });
 
-// POST add new service with image
-app.post('/api/services', upload.single('image'), async (req, res) => {
+// POST add new service with image (PROTECTED)
+app.post('/api/services', authenticateToken, upload.single('image'), async (req, res) => {
     const { nom, type, ville, tarifs, services: description, horaires, statut = 'en_attente' } = req.body;
     let imageUrl = null;
 
@@ -163,8 +183,8 @@ app.post('/api/services', upload.single('image'), async (req, res) => {
     }
 });
 
-// PUT update service with image
-app.put('/api/services/:id', upload.single('image'), async (req, res) => {
+// PUT update service with image (PROTECTED)
+app.put('/api/services/:id', authenticateToken, upload.single('image'), async (req, res) => {
     const { id } = req.params;
     const { nom, type, ville, tarifs, services: description, horaires, statut } = req.body;
 
@@ -216,8 +236,8 @@ app.put('/api/services/:id', upload.single('image'), async (req, res) => {
     }
 });
 
-// DELETE service
-app.delete('/api/services/:id', async (req, res) => {
+// DELETE service (PROTECTED)
+app.delete('/api/services/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     try {
         const { error } = await supabase
@@ -235,13 +255,6 @@ app.delete('/api/services/:id', async (req, res) => {
 
 // USER AUTHENTICATION ROUTES
 //register
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-
-// Secret key for JWT (store in .env)
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
-const JWT_EXPIRES_IN = '1h'; // expires in 1 hour
-
 app.post('/api/auth/register', async (req, res) => {
     const { name, email, password } = req.body;
 
@@ -377,12 +390,133 @@ app.get('/api/dashboard', (req, res) => {
     }
 });
 
+// ===============================
+// SIMPLER AUTH ENDPOINTS (for frontend compatibility)
+// ===============================
+
+// POST /api/register - Simple registration endpoint
+app.post('/api/register', async (req, res) => {
+    const { name, email, password } = req.body;
+
+    try {
+        // Check if user already exists
+        const { data: existingUser } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', email)
+            .single();
+
+        if (existingUser) {
+            return res.status(400).json({ success: false, error: 'Cet email est déjà enregistré' });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Insert into users table
+        const { data, error } = await supabase
+            .from('users')
+            .insert([{
+                name,
+                email,
+                password: hashedPassword,
+                role: 'user'
+            }])
+            .select();
+
+        if (error) throw error;
+
+        res.status(201).json({
+            success: true,
+            message: 'Compte créé avec succès ! Veuillez vous connecter.',
+            user: {
+                id: data[0].id,
+                name: data[0].name,
+                email: data[0].email
+            }
+        });
+
+    } catch (err) {
+        console.error('Registration error:', err);
+        res.status(500).json({ success: false, error: err.message || 'Erreur lors de l\'inscription' });
+    }
+});
+
+// POST /api/login - Simple login endpoint
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // Get user from database
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
+
+        if (userError || !user) {
+            return res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
+        }
+
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: user.id, email: user.email, name: user.name, role: user.role },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+        );
+
+        res.json({
+            success: true,
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ success: false, error: 'Erreur serveur, veuillez réessayer' });
+    }
+});
+
+// GET /api/me - Verify token and get user info
+app.get('/api/me', (req, res) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ success: false, error: 'Token manquant' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        res.json({ success: true, user: decoded });
+    } catch (err) {
+        res.status(401).json({ success: false, error: 'Token invalide ou expiré' });
+    }
+});
+
+
 // FAVORITES ROUTES
 // FAVORITES ROUTES - CORRIGÉES
 
-// GET - Récupérer tous les favoris d'un utilisateur
-app.get('/api/favorites/:userId', async (req, res) => {
-    const { userId } = req.params;
+// GET - Récupérer les favoris d'un utilisateur (PROTECTED)
+app.get('/api/favorites/:userId', authenticateToken, async (req, res) => {
+    const userId = req.params.userId;
+    const authenticatedUserId = req.user.id;
+
+    // Optional: Only allow users to see their own favorites
+    if (userId != authenticatedUserId && req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, error: 'Accès non autorisé' });
+    }
     
     try {
         const { data, error } = await supabase
@@ -412,9 +546,15 @@ app.get('/api/favorites/:userId', async (req, res) => {
     }
 });
 
-// POST - Ajouter un favori (avec gestion des doublons)
-app.post('/api/favorites', async (req, res) => {
+// POST - Ajouter un favori (PROTECTED)
+app.post('/api/favorites', authenticateToken, async (req, res) => {
     const { user_id, service_id } = req.body;
+    const authenticatedUserId = req.user.id;
+
+    // Security check: user can only add favorites for themselves
+    if (user_id != authenticatedUserId) {
+        return res.status(403).json({ success: false, error: 'Accès non autorisé' });
+    }
     
     try {
         // Vérifier si le favori existe déjà
@@ -472,9 +612,15 @@ app.post('/api/favorites', async (req, res) => {
     }
 });
 
-// DELETE - Supprimer un favori par user_id et service_id
-app.delete('/api/favorites', async (req, res) => {
+// DELETE - Supprimer un favori (PROTECTED)
+app.delete('/api/favorites', authenticateToken, async (req, res) => {
     const { user_id, service_id } = req.body;
+    const authenticatedUserId = req.user.id;
+
+    // Security check: user can only remove their own favorites
+    if (user_id != authenticatedUserId) {
+        return res.status(403).json({ success: false, error: 'Accès non autorisé' });
+    }
     
     if (!user_id || !service_id) {
         return res.status(400).json({ 

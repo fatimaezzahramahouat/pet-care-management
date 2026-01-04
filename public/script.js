@@ -12,15 +12,15 @@ const API_URL = 'http://localhost:5000/api';
 // ===============================
 
 // Récupérer l'ID utilisateur (à adapter selon votre système d'authentification)
+// Récupérer l'ID utilisateur
 function getCurrentUserId() {
-    // Pour l'instant, on utilise un ID fixe
-    // À remplacer par l'ID de l'utilisateur connecté
-    return 1;
+    const user = JSON.parse(localStorage.getItem('user'));
+    return user ? user.id : null;
 }
 
 // Ajouter aux favoris
 async function addToFavorites(userId, serviceId) {
-    const response = await fetch(`${API_URL}/favorites`, {
+    const response = await fetchWithAuth(`${API_URL}/favorites`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -32,7 +32,8 @@ async function addToFavorites(userId, serviceId) {
     });
     
     if (!response.ok) {
-        throw new Error('Erreur lors de l\'ajout aux favoris');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de l\'ajout aux favoris');
     }
     
     return await response.json();
@@ -40,7 +41,7 @@ async function addToFavorites(userId, serviceId) {
 
 // Retirer des favoris
 async function removeFromFavorites(userId, serviceId) {
-    const response = await fetch(`${API_URL}/favorites`, {
+    const response = await fetchWithAuth(`${API_URL}/favorites`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json'
@@ -52,7 +53,8 @@ async function removeFromFavorites(userId, serviceId) {
     });
     
     if (!response.ok) {
-        throw new Error('Erreur lors de la suppression des favoris');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la suppression des favoris');
     }
     
     return await response.json();
@@ -122,7 +124,7 @@ async function viewMyFavorites() {
         `;
         
         // Récupérer les favoris
-        const response = await fetch(`${API_URL}/favorites/${userId}`);
+        const response = await fetchWithAuth(`${API_URL}/favorites/${userId}`);
         
         if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`);
@@ -736,6 +738,7 @@ async function viewService(id) {
 
 async function editService(id) {
     try {
+        // Fetch service data (use fetchWithAuth if you want to protect this too, otherwise fetch is fine for public viewing)
         const response = await fetch(`${API_URL}/services/${id}`);
         if (!response.ok) throw new Error('Service non trouvé');
 
@@ -798,7 +801,7 @@ async function deleteService(id) {
     }
 
     try {
-        const response = await fetch(`${API_URL}/services/${id}`, {
+        const response = await fetchWithAuth(`${API_URL}/services/${id}`, {
             method: 'DELETE'
         });
 
@@ -831,7 +834,7 @@ document.getElementById("addServiceForm").addEventListener("submit", async funct
     const formData = new FormData(this);
 
     try {
-        const res = await fetch(url, {
+        const res = await fetchWithAuth(url, {
             method: method,
             body: formData
         });
@@ -844,15 +847,17 @@ document.getElementById("addServiceForm").addEventListener("submit", async funct
         const data = await res.json();
 
         if (data.success) {
-            alert(isEdit ? 'Service modifié avec succès !' : 'Service ajouté avec succès !');
-
-            // Reset form and modal
-            this.reset();
-            delete this.dataset.editId;
-
-            const modal = bootstrap.Modal.getInstance(document.getElementById("addServiceModal"));
+            alert(isEdit ? 'Service mis à jour avec succès !' : 'Service ajouté avec succès !');
+            
+            // Close modal
+            const modalElement = document.getElementById('addServiceModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
             if (modal) modal.hide();
 
+            // Reset form
+            this.reset();
+            delete this.dataset.editId;
+            
             // Reset modal title and button
             document.querySelector('#addServiceModal .modal-title').textContent = 'Ajouter un nouveau service';
             const submitBtn = this.querySelector('button[type="submit"]');
@@ -923,25 +928,57 @@ document.querySelector('input[name="image"]')?.addEventListener('change', functi
     reader.readAsDataURL(file);
 });
 
-document.getElementById("contactForm").addEventListener("submit", function (e) {
-    e.preventDefault();
+const contactForms = ['contactForm', 'contactFormDashboard'];
+contactForms.forEach(formId => {
+    const contactForm = document.getElementById(formId);
+    if (contactForm) {
+        contactForm.addEventListener("submit", function (e) {
+            e.preventDefault();
 
-    const formData = {
-        firstName: document.getElementById('firstName').value,
-        lastName: document.getElementById('lastName').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        petType: document.getElementById('contactPetType').value,
-        service: document.getElementById('service').value,
-        message: document.getElementById('message').value
-    };
+            const formData = {
+                firstName: contactForm.querySelector('#firstName')?.value,
+                lastName: contactForm.querySelector('#lastName')?.value,
+                email: contactForm.querySelector('#email_contact')?.value || contactForm.querySelector('#email')?.value,
+                phone: contactForm.querySelector('#phone')?.value,
+                petType: contactForm.querySelector('#contactPetType')?.value,
+                service: contactForm.querySelector('#service_contact')?.value || contactForm.querySelector('#service')?.value,
+                message: contactForm.querySelector('#message')?.value
+            };
 
-    console.log('Contact form submitted:', formData);
-    alert('Merci ! Votre message a été envoyé. Nous vous répondrons dans les plus brefs délais.');
-    this.reset();
+            console.log('Contact form submitted:', formData);
+            alert('Merci ! Votre message a été envoyé. Nous vous répondrons dans les plus brefs délais.');
+            this.reset();
+        });
+    }
 });
 //auth
 
+
+// ============================
+// DYNAMIC NAVBAR
+// ============================
+function updateNavbar() {
+    const authButtons = document.getElementById('authButtons');
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    if (!authButtons) return;
+
+    if (token && user) {
+        authButtons.innerHTML = `
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle me-1"></i> ${user.name}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                    <li><a class="dropdown-item py-2" href="dashboard.html"><i class="bi bi-speedometer2 me-2"></i> Tableau de bord</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item py-2 text-danger" href="javascript:void(0)" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i> Déconnexion</a></li>
+                </ul>
+            </div>
+        `;
+    }
+}
 
 // ============================
 // REGISTER
@@ -964,9 +1001,19 @@ if (registerForm) {
 
             if (!data.success) return alert('Erreur: ' + data.error);
 
-            // Registration successful, but do NOT redirect
-            alert('Compte créé avec succès ! Veuillez vous connecter.');
+            alert(data.message || 'Compte créé avec succès ! Veuillez vous connecter.');
             registerForm.reset();
+            
+            // Auto close register and open login
+            const regModalEl = document.getElementById('registerModal');
+            const logModalEl = document.getElementById('loginModal');
+            if (regModalEl && logModalEl) {
+                const regModal = bootstrap.Modal.getInstance(regModalEl) || new bootstrap.Modal(regModalEl);
+                regModal.hide();
+                const logModal = bootstrap.Modal.getInstance(logModalEl) || new bootstrap.Modal(logModalEl);
+                logModal.show();
+            }
+
         } catch (err) {
             console.error(err);
             alert('Erreur lors de l\'inscription');
@@ -992,14 +1039,13 @@ if (loginForm) {
             });
             const data = await res.json();
 
-            if (!data.success) return alert('Erreur: ' + data.error);
+            if (!data.success) return alert('Erreur: ' + (data.error || data.message));
 
-            // Save JWT and user info
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
 
             alert('Connexion réussie !');
-            window.location.href = 'dashboard.html'; // Redirect only after login
+            window.location.href = 'dashboard.html';
         } catch (err) {
             console.error(err);
             alert('Erreur lors de la connexion');
@@ -1008,23 +1054,39 @@ if (loginForm) {
 }
 
 // ============================
-// CHECK AUTHENTICATION ON DASHBOARD
+// AUTH HELPERS
 // ============================
 function checkAuth() {
     const token = localStorage.getItem('token');
     if (!token) {
-        alert('Vous devez vous connecter pour accéder au dashboard');
-        window.location.href = 'index.html';
+        if (window.location.pathname.includes('dashboard.html')) {
+            window.location.href = 'index.html';
+        }
+        return false;
     }
+    return true;
 }
 
-// ============================
-// LOGOUT
-// ============================
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = 'index.html';
+}
+
+async function fetchWithAuth(url, options = {}) {
+    const token = localStorage.getItem('token');
+    if (token) {
+        options.headers = {
+            ...options.headers,
+            'Authorization': `Bearer ${token}`
+        };
+    }
+    
+    const response = await fetch(url, options);
+    if (response.status === 401 || response.status === 403) {
+        logout();
+    }
+    return response;
 }
 
 // ===============================
@@ -1095,24 +1157,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Search on Enter key
-    const locationInput = document.getElementById('locationInput');
+    const locationInput = document.getElementById('locationInput') || document.getElementById('locationInputDashboard');
     if (locationInput) {
         locationInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
-                searchServices();
+                searchServices(true);
             }
         });
     }
 
     // Auto-search when pet type changes
-    const petTypeSelect = document.getElementById('petTypeSelect');
+    const petTypeSelect = document.getElementById('petTypeSelect') || document.getElementById('petTypeSelectDashboard');
     if (petTypeSelect) {
         petTypeSelect.addEventListener('change', function() {
             currentPetType = this.value;
-            searchServices();
+            searchServices(true);
         });
     }
-
     // Reset form when modal closes
     const addServiceModal = document.getElementById('addServiceModal');
     if (addServiceModal) {
@@ -1140,6 +1201,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Initialize active nav link
     updateActiveNavLink();
+    
+    // Update navbar for auth state
+    updateNavbar();
     
     console.log('Initialisation terminée');
 });

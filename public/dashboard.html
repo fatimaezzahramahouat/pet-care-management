@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord | Pet Management</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --success-color: #4cc9f0;
+            --bg-dark: #212529;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 4rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 50px 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .nav-tabs {
+            border-bottom: none;
+            gap: 10px;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: #6c757d;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+
+        .dashboard-card {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .welcome-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-block;
+            backdrop-filter: blur(5px);
+        }
+
+        .tab-content {
+            padding: 2rem 0;
+        }
+
+        #favoritesSection .card {
+            height: 100%;
+        }
+
+        .btn-logout {
+            border-radius: 50px;
+            padding: 10px 25px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // Check authentication IMMEDIATELY
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary fs-3" href="index.html">
+                <i class="bi bi-heart-pulse-fill me-2"></i>PetCare
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item me-3">
+                        <span class="fw-medium text-dark" id="userDisplayName">Utilisateur</span>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-outline-danger btn-logout" onclick="logout()">
+                            <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <header class="dashboard-header text-center">
+        <div class="container">
+            <div class="welcome-badge mb-3">
+                <h5 class="mb-0">Tableau de Bord Personnel</h5>
+            </div>
+            <h1 class="display-4 fw-bold mb-3">Bonjour, <span id="userName">Ami des Animaux</span> !</h1>
+            <p class="lead opacity-75">Gérez tous vos services et retrouvez vos établissements favoris</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Dashboard Navigation -->
+        <ul class="nav nav-tabs justify-content-center" id="dashboardTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="services-tab" data-bs-toggle="tab" data-bs-target="#servicesSection" type="button" role="tab">
+                    <i class="bi bi-search me-2"></i>Services
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="scraping-tab" data-bs-toggle="tab" data-bs-target="#scrapingSection" type="button" role="tab">
+                    <i class="fas fa-database me-2"></i>Scraping Data
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contactSection" type="button" role="tab">
+                    <i class="bi bi-telephone me-2"></i>Contact
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            
+            <!-- 1. Services Section -->
+            <div class="tab-pane fade show active" id="servicesSection" role="tabpanel">
+                <!-- Original Search Container from index.html -->
+                <div class="card shadow-lg border-0 mb-5">
+                    <div class="card-body p-4 text-dark">
+                        <div class="row align-items-center">
+                            <!-- Je recherche... -->
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column">
+                                    <label class="form-label fw-bold mb-2">
+                                        <i class="bi bi-search me-2"></i>Je recherche...
+                                    </label>
+                                    <div class="btn-group-vertical" role="group">
+                                        <button type="button" class="btn btn-outline-primary text-start mb-2 active" 
+                                                onclick="filterService('vet')" id="vetBtn">
+                                            <i class="bi bi-heart-pulse me-2"></i>Vétérinaires
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary text-start mb-2"
+                                                onclick="filterService('grooming')" id="groomingBtn">
+                                            <i class="bi bi-scissors me-2"></i>Toiletteurs
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary text-start"
+                                                onclick="filterService('boarding')" id="boardingBtn">
+                                            <i class="bi bi-house-heart me-2"></i>Pensions
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary text-start mt-2"
+                                                onclick="filterService('all')" id="allBtn">
+                                            <i class="bi bi-list me-2"></i>Tous les services
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Près de moi -->
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column">
+                                    <label class="form-label fw-bold mb-2">
+                                        <i class="bi bi-geo-alt me-2"></i>Près de moi
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="bi bi-geo-fill"></i>
+                                        </span>
+                                        <input type="text" class="form-control" 
+                                               id="locationInput" 
+                                               placeholder="Entrez une ville ou code postal">
+                                    </div>
+                                    <button class="btn btn-link text-decoration-none p-0 mt-2 text-start" 
+                                            onclick="useCurrentLocation()">
+                                        <i class="bi bi-crosshair me-1"></i>Utiliser ma position actuelle
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Type d'animal -->
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column">
+                                    <label class="form-label fw-bold mb-2">
+                                        <i class="bi bi-heart me-2"></i>Mon animal
+                                    </label>
+                                    <select class="form-select" id="petTypeSelect">
+                                        <option value="all">Tous les animaux</option>
+                                        <option value="dog">🐶 Chien</option>
+                                        <option value="cat">🐱 Chat</option>
+                                        <option value="bird">🐦 Oiseau</option>
+                                        <option value="rabbit">🐰 Lapin</option>
+                                        <option value="rodent">🐹 Rongeur</option>
+                                        <option value="reptile">🦎 Reptile</option>
+                                        <option value="other">🐾 Autre</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Bouton Rechercher -->
+                            <div class="col-md-3">
+                                <div class="d-flex flex-column h-100 justify-content-end">
+                                    <button class="btn btn-primary btn-lg w-100 py-3" onclick="searchServices()" id="searchBtn">
+                                        <i class="bi bi-search me-2"></i>Rechercher
+                                    </button>
+                                    <button class="btn btn-link text-decoration-none mt-2" data-bs-toggle="modal" data-bs-target="#advancedSearch">
+                                        <i class="bi bi-filter me-1"></i>Recherche avancée
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Filtres actifs -->
+                        <div id="activeFilters" class="mt-3 d-none">
+                            <div class="d-flex align-items-center">
+                                <small class="text-muted me-2">Filtres actifs:</small>
+                                <div id="filterTags" class="d-flex flex-wrap gap-2"></div>
+                                <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="clearFilters()">
+                                    <i class="bi bi-x-circle me-1"></i>Effacer tous les filtres
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Management Buttons -->
+                <div class="d-flex justify-content-center gap-3 mb-5">
+                    <button class="btn btn-success btn-lg px-4" onclick="openAddServiceModal()">
+                        <i class="bi bi-plus-circle me-2"></i>Ajouter un service
+                    </button>
+                    <button class="btn btn-danger btn-lg px-4" onclick="viewMyFavorites()">
+                        <i class="bi bi-heart-fill me-2"></i>Mes Favoris
+                    </button>
+                </div>
+
+                <div id="servicesResults" class="row g-4">
+                    <!-- Cards will be injected by script.js -->
+                </div>
+                
+                <!-- Pagination -->
+                <div class="d-flex justify-content-center align-items-center gap-3 mt-5" id="pagination">
+                    <button class="btn btn-outline-primary" id="prevPage">
+                        <i class="bi bi-chevron-left"></i> Précédent
+                    </button>
+                    <span id="pageIndicator" class="fw-bold fs-5">Page 1 / 1</span>
+                    <button class="btn btn-outline-primary" id="nextPage">
+                        Suivant <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+
+
+            <!-- 3. Scraping Section (RESTORED) -->
+            <div class="tab-pane fade" id="scrapingSection" role="tabpanel">
+                <div class="container container-scraping">
+                    <section class="scraping-section" id="scraping">
+                        <div class="card shadow border-0 rounded-4">
+                            <div class="card-header bg-primary text-white p-4 rounded-top-4">
+                                <h2 class="mb-0"><i class="fas fa-search me-2"></i> Scraping Vétérinaires</h2>
+                                <p class="mb-0 opacity-75">Remplissez le formulaire pour rechercher des vétérinaires sur Google Maps</p>
+                            </div>
+                            
+                            <div class="card-body p-4">
+                                <form id="scrapingForm">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="nom" class="form-label fw-bold"><i class="fas fa-user me-2"></i> Votre Nom</label>
+                                                <input type="text" class="form-control" id="nom" placeholder="Votre nom complet" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="email_scrape" class="form-label fw-bold"><i class="fas fa-envelope me-2"></i> Email</label>
+                                                <input type="email" class="form-control" id="email_scrape" placeholder="votre@email.com" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="telephone" class="form-label fw-bold"><i class="fas fa-phone me-2"></i> Téléphone</label>
+                                                <input type="tel" class="form-control" id="telephone" placeholder="+212 6XX XX XX XX">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="ville_scrape" class="form-label fw-bold"><i class="fas fa-city me-2"></i> Ville *</label>
+                                                <input type="text" class="form-control" id="ville_scrape" value="Marrakech" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="country" class="form-label fw-bold"><i class="fas fa-flag me-2"></i> Pays *</label>
+                                                <select class="form-select" id="country" required>
+                                                    <option value="Morocco" selected>Maroc</option>
+                                                    <option value="France">France</option>
+                                                    <option value="Spain">Espagne</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="maxLeads" class="form-label fw-bold"><i class="fas fa-list-ol me-2"></i> Nombre de résultats</label>
+                                                <input type="range" class="form-range" id="maxLeads" min="5" max="50" value="20">
+                                                <div class="text-center"><span id="rangeValue" class="fw-bold">20</span> vétérinaires maximum</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center mt-4">
+                                        <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill" id="scrapeBtn">
+                                            <i class="fas fa-bolt me-2"></i> Lancer le Scraping
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-lg ms-2 px-5 rounded-pill" id="resetBtn">
+                                            <i class="fas fa-redo me-2"></i> Réinitialiser
+                                        </button>
+                                    </div>
+                                </form>
+                                
+                                <div id="resultSection" class="mt-4 d-none">
+                                    <div class="alert alert-info rounded-4 p-4 text-center">
+                                        <h3 id="statusTitle"><i class="fas fa-spinner fa-spin me-2"></i> Scraping en cours...</h3>
+                                        <div class="progress my-3" style="height: 10px;">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" style="width: 10%;"></div>
+                                        </div>
+                                        <p id="statusMessage" class="mb-3">Initialisation du scraping...</p>
+                                        <div class="d-flex justify-content-center gap-3 mb-3">
+                                            <div class="badge bg-light text-dark p-2 border">Job ID: <strong id="jobId">--</strong></div>
+                                            <div class="badge bg-light text-dark p-2 border">Ville: <strong id="location_status">--</strong></div>
+                                        </div>
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <button class="btn btn-success d-none" id="openSheetBtn">
+                                                <i class="fas fa-file-excel me-2"></i> Ouvrir Google Sheet
+                                            </button>
+                                            <button class="btn btn-outline-primary" id="refreshBtn">
+                                                <i class="fas fa-sync-alt me-2"></i> Vérifier le statut
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="instructions-section mt-5">
+                        <div class="card shadow border-0 rounded-4 p-4">
+                            <h3 class="fw-bold mb-4 text-primary"><i class="fas fa-info-circle me-2"></i> Comment ça marche ?</h3>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ol class="list-group list-group-numbered list-group-flush">
+                                        <li class="list-group-item border-0"><strong>Remplissez le formulaire</strong> avec la ville souhaitée</li>
+                                        <li class="list-group-item border-0"><strong>Cliquez sur "Lancer le Scraping"</strong> pour démarrer la recherche</li>
+                                        <li class="list-group-item border-0"><strong>n8n va automatiquement</strong> scraper Google Maps</li>
+                                        <li class="list-group-item border-0"><strong>Les données sont sauvegardées</strong> dans Google Sheets</li>
+                                    </ol>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-around text-center mt-3 mt-md-0">
+                                        <div class="px-2">
+                                            <i class="fas fa-shield-alt fs-2 text-success mb-2"></i>
+                                            <h6 class="fw-bold">Sécurisé</h6>
+                                        </div>
+                                        <div class="px-2">
+                                            <i class="fas fa-bolt fs-2 text-warning mb-2"></i>
+                                            <h6 class="fw-bold">Rapide</h6>
+                                        </div>
+                                        <div class="px-2">
+                                            <i class="fas fa-database fs-2 text-info mb-2"></i>
+                                            <h6 class="fw-bold">Complet</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- 4. Contact Section (RESTORED) -->
+            <div class="tab-pane fade" id="contactSection" role="tabpanel">
+                <section id="contactWrapper" class="py-4">
+                    <div class="container">
+                        <div class="row">
+                            <!-- Formulaire de contact -->
+                            <div class="col-lg-8 mb-4">
+                                <div class="card shadow-sm border-0 rounded-4">
+                                    <div class="card-body p-4">
+                                        <h3 class="card-title fw-bold mb-4 text-primary">Envoyez-nous un message</h3>
+                                        
+                                        <form id="contactForm">
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label for="firstName" class="form-label fw-bold">Prénom *</label>
+                                                    <input type="text" class="form-control" id="firstName" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="lastName" class="form-label fw-bold">Nom *</label>
+                                                    <input type="text" class="form-control" id="lastName" required>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label for="email_contact" class="form-label fw-bold">Email *</label>
+                                                    <input type="email" class="form-control" id="email_contact" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="phone" class="form-label fw-bold">Téléphone</label>
+                                                    <input type="tel" class="form-control" id="phone">
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="contactPetType" class="form-label fw-bold">Type d'animal</label>
+                                                <select class="form-select" id="contactPetType">
+                                                    <option value="">Sélectionnez un type</option>
+                                                    <option value="dog">Chien</option>
+                                                    <option value="cat">Chat</option>
+                                                    <option value="bird">Oiseau</option>
+                                                    <option value="other">Autre</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="service_contact" class="form-label fw-bold">Service concerné *</label>
+                                                <select class="form-select" id="service_contact" required>
+                                                    <option value="">Choisissez un service</option>
+                                                    <option value="vet">Vétérinaire</option>
+                                                    <option value="grooming">Toilettage</option>
+                                                    <option value="boarding">Pension</option>
+                                                    <option value="other">Autre</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="message" class="form-label fw-bold">Message *</label>
+                                                <textarea class="form-control" id="message" rows="5" required placeholder="Décrivez votre demande en détail..."></textarea>
+                                            </div>
+                                            
+                                            <div class="d-grid mt-4">
+                                                <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+                                                    <i class="bi bi-send me-2"></i> Envoyer le message
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Informations de contact -->
+                            <div class="col-lg-4">
+                                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                                    <div class="card-body p-4">
+                                        <h4 class="fw-bold mb-4 text-primary">Nos coordonnées</h4>
+                                        <div class="d-flex mb-4">
+                                            <i class="bi bi-geo-alt text-primary fs-4 me-3"></i>
+                                            <div>
+                                                <h6 class="fw-bold mb-0">Adresse</h6>
+                                                <p class="text-muted mb-0">123 Rue des Animaux, Paris</p>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex mb-4">
+                                            <i class="bi bi-telephone text-primary fs-4 me-3"></i>
+                                            <div>
+                                                <h6 class="fw-bold mb-0">Téléphone</h6>
+                                                <p class="text-muted mb-0">+33 1 23 45 67 89</p>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex mb-4">
+                                            <i class="bi bi-envelope text-primary fs-4 me-3"></i>
+                                            <div>
+                                                <h6 class="fw-bold mb-0">Email</h6>
+                                                <p class="text-muted mb-0">contact@petservices.fr</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card shadow-sm border-0 rounded-4 bg-primary text-white">
+                                    <div class="card-body p-4 text-center">
+                                        <i class="bi bi-headphones display-4 mb-3"></i>
+                                        <h5 class="fw-bold">Support 24/7</h5>
+                                        <p class="opacity-75">Notre équipe est disponible pour vous aider à tout moment.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5 mt-5">
+        <div class="container text-center">
+            <h4 class="fw-bold text-primary mb-3">PetCare Dashboard</h4>
+            <p class="mb-4 text-white-50">Votre destination unique pour tout ce qui concerne vos animaux de compagnie.</p>
+            <hr class="bg-white-50 mx-auto w-25">
+            <p class="small text-white-50 mt-4">&copy; 2024 Pet Management Dashboard. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <!-- MODAL AJOUTER/MODIFIER SERVICE -->
+    <div class="modal fade" id="addServiceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content text-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter un nouveau service</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addServiceForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Nom du service *</label>
+                                <input type="text" class="form-control" name="nom" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Type de service *</label>
+                                <select class="form-select" name="type" required>
+                                    <option value="">Sélectionnez un type</option>
+                                    <option value="vet">Vétérinaire</option>
+                                    <option value="grooming">Toilettage</option>
+                                    <option value="boarding">Pension</option>
+                                    <option value="training">Éducation</option>
+                                    <option value="walking">Promenade</option>
+                                    <option value="other">Autre</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Ville *</label>
+                                <input type="text" class="form-control" name="ville" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Tarifs (€) *</label>
+                                <input type="number" step="0.01" class="form-control" name="tarifs" required>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">Services proposés *</label>
+                                <textarea class="form-control" name="services" rows="3" required 
+                                          placeholder="Décrivez les services proposés..."></textarea>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">Horaires *</label>
+                                <input type="text" class="form-control" name="horaires" 
+                                       placeholder="Ex: Lun-Ven: 9h-18h, Sam: 9h-12h" required>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">Statut</label>
+                                <select class="form-select" name="statut">
+                                    <option value="en_attente">En attente</option>
+                                    <option value="actif">Actif</option>
+                                    <option value="inactif">Inactif</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold">Image du service</label>
+                                <input type="file" class="form-control" name="image" accept="image/*" id="imageInputDashboard">
+                                <small class="text-muted">Formats acceptés: JPG, PNG, GIF (max 5MB)</small>
+                                <div id="imagePreview" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-success">Ajouter le service</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RECHERCHE AVANCÉE -->
+    <div class="modal fade" id="advancedSearch" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content text-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Recherche avancée</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Rayon de recherche</label>
+                            <select class="form-select" id="radiusSelect">
+                                <option value="5">5 km</option>
+                                <option value="10" selected>10 km</option>
+                                <option value="20">20 km</option>
+                                <option value="50">50 km</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Note minimum</label>
+                            <select class="form-select" id="ratingSelect">
+                                <option value="0">Toutes notes</option>
+                                <option value="3">3 étoiles et plus</option>
+                                <option value="4" selected>4 étoiles et plus</option>
+                                <option value="5">5 étoiles uniquement</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="applyAdvancedSearch()">Appliquer les filtres</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Main Script -->
+    <script src="script.js"></script>
+    
+    <!-- Dashboard Specific Init -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                document.getElementById('userName').innerText = user.name;
+                document.getElementById('userDisplayName').innerText = user.name;
+            }
+            
+            // Initial load of services
+            if (typeof searchServices === 'function') {
+                searchServices(true);
+            }
+        });
+
+        // Function to load favorites only when tab is clicked
+        async function loadUserFavorites() {
+            const container = document.getElementById('favoritesResults');
+            const user = JSON.parse(localStorage.getItem('user'));
+            const token = localStorage.getItem('token');
+            
+            if (!user) return;
+
+            try {
+                const res = await fetch(`${API_URL}/favorites/${user.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.success && data.favorites.length > 0) {
+                    container.innerHTML = data.favorites.map(fav => {
+                        const s = fav.services_animaliers;
+                        return `
+                            <div class="col-md-4">
+                                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                                    <img src="${s.image_url || 'https://via.placeholder.com/300x200?text=Pet+Service'}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                    <div class="card-body">
+                                        <h5 class="card-title fw-bold">${s.nom}</h5>
+                                        <p class="text-muted small mb-2"><i class="bi bi-geo-alt"></i> ${s.localisation}</p>
+                                        <p class="card-text text-truncate">${s.description || 'Aucune description'}</p>
+                                        <div class="d-flex justify-content-between align-items-center mt-3">
+                                            <span class="badge bg-primary rounded-pill">${s.categorie}</span>
+                                            <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="removeFromFavorites(${s.id})">
+                                                <i class="bi bi-heart-break me-1"></i>Retirer
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="col-12 text-center py-5">
+                            <i class="bi bi-heart text-muted display-1"></i>
+                            <h4 class="mt-3">Aucun favori pour le moment</h4>
+                            <p class="text-muted">Explorez nos services et cliquez sur l'icône coeur pour les enregistrer ici.</p>
+                            <button class="btn btn-primary" onclick="document.getElementById('services-tab').click()">Explorer les services</button>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement des favoris.</div>';
+            }
+        }
+
+        async function removeFromFavorites(serviceId) {
+            const user = JSON.parse(localStorage.getItem('user'));
+            const token = localStorage.getItem('token');
+            
+            if (!confirm('Voulez-vous retirer ce service de vos favoris ?')) return;
+
+            try {
+                const res = await fetch(`${API_URL}/favorites`, {
+                    method: 'DELETE',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ user_id: user.id, service_id: serviceId })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    loadUserFavorites(); // Refresh list
+                } else {
+                    alert(data.error || 'Erreur lors de la suppression');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erreur réseau');
+            }
+        }
+    </script>
+</body>
+</html>
