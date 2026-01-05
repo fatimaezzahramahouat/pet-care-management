@@ -835,20 +835,20 @@ function initScrapingForm() {
                 jobIdSpan.textContent = 'N/A';
             }
 
-            // If n8n returns a sheet URL, redirect automatically
-            if (result.data && result.data.sheetUrl) {
-                openSheetBtn.classList.remove('d-none');
-                openSheetBtn.onclick = () => window.open(result.data.sheetUrl, '_blank');
-                
-                // Definitive redirect after status update
-                statusTitle.innerHTML = `<i class="fas fa-check-circle text-success me-2"></i> Terminé !`;
-                statusMessage.textContent = 'Scraping terminé ! Redirection vers vos résultats...';
-                
-                setTimeout(() => {
-                    // Using window.location.href is more reliable than window.open in a timeout
-                    window.location.href = result.data.sheetUrl;
-                }, 1500);
-            }
+            // Redirect to the specific Google Sheet provided by the user
+            const sheetUrl = "https://docs.google.com/spreadsheets/d/1bXaY28u0YTYwnUk-4fWkGRVvQGCES01B8C-P_GsT_zM/edit?gid=0#gid=0";
+            
+            openSheetBtn.classList.remove('d-none');
+            openSheetBtn.onclick = () => window.open(sheetUrl, '_blank');
+            
+            // Definitive redirect after status update
+            statusTitle.innerHTML = `<i class="fas fa-check-circle text-success me-2"></i> Terminé !`;
+            statusMessage.textContent = 'Scraping terminé ! Redirection vers vos résultats...';
+            
+            setTimeout(() => {
+                // Using window.location.href to redirect to the sheet
+                window.location.href = sheetUrl;
+            }, 1500);
 
             alert('Demande de scraping envoyée avec succès !');
 
