@@ -13,10 +13,39 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // ----------------- CONFIG SUPABASE -----------------
+// Helper for retry
+async function retryStorageUpload(fn, retries = 3, delay = 2000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (err) {
+            console.warn(`⚠️ Tentative d'upload ${i + 1}/${retries} échouée:`, err.message);
+            if (i === retries - 1) throw err;
+            await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+        }
+    }
+}
+
 const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY // Changed to anon key for most operations
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+        global: {
+            // Increase timeout for slow connections
+            fetch: (url, options) => {
+                return fetch(url, { 
+                    ...options, 
+                    // @ts-ignore
+                    duplex: 'half' // Required for Node 18+ and large payloads
+                });
+            }
+        }
+    }
 );
+
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn('⚠️ ATTENTION: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant dans le fichier .env');
+}
 
 // ----------------- JWT CONFIG -----------------
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -109,6 +138,48 @@ app.get('/api/services/search', async (req, res) => {
     }
 });
 
+// SCRAPING ENDPOINT (PROTECTED)
+app.post('/api/scrape', authenticateToken, async (req, res) => {
+    const { nom, email, telephone, ville, country, maxLeads } = req.body;
+    const webhookUrl = process.env.SCRAPING_WEBHOOK_URL;
+
+    if (!webhookUrl) {
+        return res.status(500).json({ success: false, error: 'SCRAPING_WEBHOOK_URL non configuré sur le serveur' });
+    }
+
+    try {
+        console.log('--- ENVOI REQUÊTE SCRAPING ---');
+        console.log('Données:', { nom, email, ville, country, maxLeads });
+
+        // Appel au webhook n8n
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nom,
+                email,
+                telephone,
+                ville,
+                country,
+                maxLeads,
+                userId: req.user.id,
+                timestamp: new Date().toISOString()
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`n8n Error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        res.json({ success: true, data: data });
+    } catch (err) {
+        console.error('Scraping error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // GET service by ID
 app.get('/api/services/:id', async (req, res) => {
     const { id } = req.params;
@@ -139,46 +210,78 @@ app.post('/api/services', authenticateToken, upload.single('image'), async (req,
 
         // Upload image to Supabase Storage if exists
         if (req.file) {
-            const fileBuffer = fs.readFileSync(req.file.path);
-            const fileName = `services/${Date.now()}_${req.file.originalname}`;
+            console.log('--- DEBUT UPLOAD SUPABASE ---');
+            console.log('Fichier reçu:', req.file.originalname);
             
-            const { data, error: uploadError } = await supabase.storage
-                .from('services-images')
-                .upload(fileName, fileBuffer, { 
-                    contentType: req.file.mimetype,
-                    upsert: true 
+            // Normaliser le nom du fichier (supprimer les caractères spéciaux)
+            const fileExt = path.extname(req.file.originalname);
+            const fileNameRoot = path.basename(req.file.originalname, fileExt)
+                .replace(/[^a-z0-9]/gi, '_')
+                .toLowerCase();
+            const fileName = `services/${Date.now()}_${fileNameRoot}${fileExt}`;
+            
+            console.log('Nom normalisé pour Supabase:', fileName);
+            console.log('Supabase URL:', process.env.SUPABASE_URL);
+            
+            const fileBuffer = fs.readFileSync(req.file.path);
+            
+            try {
+                const { data, error: uploadError } = await retryStorageUpload(async () => {
+                    return await supabase.storage
+                        .from('service-image')
+                        .upload(fileName, fileBuffer, { 
+                            contentType: req.file.mimetype,
+                            cacheControl: '3600',
+                            upsert: true 
+                        });
                 });
 
-            if (uploadError) throw uploadError;
-            
-            // Get public URL
-            const { data: urlData } = supabase.storage
-                .from('services-images')
-                .getPublicUrl(fileName);
-            
-            imageUrl = urlData.publicUrl;
-            fs.unlinkSync(req.file.path);
+                if (uploadError) {
+                    console.error('❌ ERREUR UPLOAD SUPABASE APRÈS RETRIES:', uploadError);
+                    // Si on a un objet d'erreur, on l'affiche en entier
+                    console.dir(uploadError, { depth: null });
+                    throw uploadError;
+                }
+                
+                console.log('✅ UPLOAD RÉUSSI:', data);
+                
+                // Get public URL
+                const { data: urlData } = supabase.storage
+                    .from('service-image')
+                    .getPublicUrl(fileName);
+                
+                imageUrl = urlData.publicUrl;
+                console.log('Public URL:', imageUrl);
+            } catch (err) {
+                console.error('🔥 CRASH PENDANT UPLOAD:', err);
+                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+                return res.status(500).json({ success: false, error: 'Erreur Supabase Storage: ' + err.message });
+            } finally {
+                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+            }
         }
 
         const { data, error } = await supabase
-            .from('services_animaliers') // Fixed table name
+            .from('services_animaliers')
             .insert([{
-                nom: nom, // Fixed column name
+                nom: nom,
                 type: type,
-                ville: ville, // Fixed column name
-                tarifs: parseFloat(tarifs) || 0, // Fixed column name
-                services: description || '', // Fixed column name
-                horaires: horaires || '', // Fixed column name
-                statut: statut, // Fixed column name
-                image: imageUrl // Fixed column name
+                ville: ville,
+                tarifs: parseFloat(tarifs) || 0,
+                services: description || '',
+                horaires: horaires || '',
+                statut: statut,
+                image: imageUrl
             }])
             .select();
 
-        if (error) throw error;
+        if (error) {
+            console.error('❌ ERREUR DB INSERT:', error);
+            throw error;
+        }
         res.json({ success: true, service: data[0] });
     } catch (err) {
-        console.error(err);
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        console.error('🔥 ERREUR CRITIQUE POST /api/services:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -201,37 +304,64 @@ app.put('/api/services/:id', authenticateToken, upload.single('image'), async (r
 
         // Upload new image if exists
         if (req.file) {
-            const fileBuffer = fs.readFileSync(req.file.path);
-            const fileName = `services/${Date.now()}_${req.file.originalname}`;
+            console.log('--- DEBUT UPLOAD (EDIT) SUPABASE ---');
+            console.log('Fichier reçu:', req.file.originalname);
+
+            // Normaliser le nom du fichier (supprimer les caractères spéciaux)
+            const fileExt = path.extname(req.file.originalname);
+            const fileNameRoot = path.basename(req.file.originalname, fileExt)
+                .replace(/[^a-z0-9]/gi, '_')
+                .toLowerCase();
+            const fileName = `services/${Date.now()}_${fileNameRoot}${fileExt}`;
             
-            const { error: uploadError } = await supabase.storage
-                .from('services-images')
-                .upload(fileName, fileBuffer, { 
-                    contentType: req.file.mimetype,
-                    upsert: true 
+            console.log('Nom normalisé pour Supabase:', fileName);
+            
+            const fileBuffer = fs.readFileSync(req.file.path);
+            
+            try {
+                const { error: uploadError } = await retryStorageUpload(async () => {
+                    return await supabase.storage
+                        .from('service-image')
+                        .upload(fileName, fileBuffer, { 
+                            contentType: req.file.mimetype,
+                            cacheControl: '3600',
+                            upsert: true 
+                        });
                 });
 
-            if (uploadError) throw uploadError;
-            
-            // Get public URL
-            const { data: urlData } = supabase.storage
-                .from('services-images')
-                .getPublicUrl(fileName);
-            
-            updates.image = urlData.publicUrl; // Fixed column name
-            fs.unlinkSync(req.file.path);
+                if (uploadError) {
+                    console.error('❌ ERREUR STORAGE EDIT RETRIES:', uploadError);
+                    throw uploadError;
+                }
+                
+                // Get public URL
+                const { data: urlData } = supabase.storage
+                    .from('service-image')
+                    .getPublicUrl(fileName);
+                
+                updates.image = urlData.publicUrl;
+                console.log('✅ NOUVELLE IMAGE UPLOADÉE:', updates.image);
+            } catch (err) {
+                console.error('🔥 CRASH STORAGE EDIT:', err);
+                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+                return res.status(500).json({ success: false, error: 'Erreur Supabase Storage (Edit): ' + err.message });
+            } finally {
+                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+            }
         }
 
         const { data, error } = await supabase
-            .from('services_animaliers') // Fixed table name
+            .from('services_animaliers')
             .update(updates)
             .eq('id', id);
         
-        if (error) throw error;
+        if (error) {
+            console.error('❌ ERREUR DB UPDATE:', error);
+            throw error;
+        }
         res.json({ success: true, message: 'Service mis à jour avec succès' });
     } catch (err) {
-        console.error(err);
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        console.error('🔥 ERREUR CRITIQUE PUT /api/services/:id:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });

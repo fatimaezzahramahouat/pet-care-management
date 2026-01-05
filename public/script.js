@@ -736,13 +736,135 @@ async function viewService(id) {
     }
 }
 
-async function editService(id) {
+// ===============================
+// SCRAPING FUNCTIONS
+// ===============================
+function showScrapingTab() {
+    const scrapingTab = document.getElementById('scraping-tab');
+    if (scrapingTab) {
+        const tab = new bootstrap.Tab(scrapingTab);
+        tab.show();
+        // Scroll to top of tab content
+        window.scrollTo({ top: scrapingTab.offsetTop - 100, behavior: 'smooth' });
+    }
+}
+
+function initScrapingForm() {
+    const scrapingForm = document.getElementById('scrapingForm');
+    if (!scrapingForm) return;
+
+    const maxLeadsInput = document.getElementById('maxLeads');
+    const rangeValue = document.getElementById('rangeValue');
+    const scrapeBtn = document.getElementById('scrapeBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const resultSection = document.getElementById('resultSection');
+    const progressBar = document.getElementById('progressBar');
+    const statusMessage = document.getElementById('statusMessage');
+    const statusTitle = document.getElementById('statusTitle');
+    const jobIdSpan = document.getElementById('jobId');
+    const locationStatus = document.getElementById('location_status');
+    const openSheetBtn = document.getElementById('openSheetBtn');
+
+    // Pre-fill user info
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.name) document.getElementById('nom').value = user.name;
+    if (user.email) document.getElementById('email_scrape').value = user.email;
+
+    // Update range value display
+    if (maxLeadsInput && rangeValue) {
+        maxLeadsInput.addEventListener('input', (e) => {
+            rangeValue.textContent = e.target.value;
+        });
+    }
+
+    // Reset form
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            scrapingForm.reset();
+            if (rangeValue) rangeValue.textContent = '20';
+            if (resultSection) resultSection.classList.add('d-none');
+        });
+    }
+
+    // Handle form submission
+    scrapingForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = {
+            nom: document.getElementById('nom').value,
+            email: document.getElementById('email_scrape').value,
+            telephone: document.getElementById('telephone').value,
+            ville: document.getElementById('ville_scrape').value,
+            country: document.getElementById('country').value,
+            maxLeads: document.getElementById('maxLeads').value
+        };
+
+        // Show result section and loading state
+        resultSection.classList.remove('d-none');
+        scrapeBtn.disabled = true;
+        scrapeBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Envoi...`;
+        
+        statusTitle.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> Initialisation...`;
+        statusMessage.textContent = 'Connexion au serveur de scraping...';
+        progressBar.style.width = '10%';
+        locationStatus.textContent = formData.ville;
+
+        try {
+            const response = await fetchWithAuth(`${API_URL}/scrape`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Erreur lors du lancement du scraping');
+            }
+
+            const result = await response.json();
+            
+            // Success state
+            progressBar.style.width = '100%';
+            progressBar.classList.remove('progress-bar-animated');
+            statusTitle.innerHTML = `<i class="fas fa-check-circle text-success me-2"></i> Scraping Lancé !`;
+            statusMessage.textContent = 'La demande a été envoyée avec succès à n8n. Vos résultats seront bientôt disponibles dans Google Sheet.';
+            
+            if (result.data && result.data.jobId) {
+                jobIdSpan.textContent = result.data.jobId;
+            } else {
+                jobIdSpan.textContent = 'N/A';
+            }
+
+            // If n8n returns a sheet URL, show the button
+            if (result.data && result.data.sheetUrl) {
+                openSheetBtn.classList.remove('d-none');
+                openSheetBtn.onclick = () => window.open(result.data.sheetUrl, '_blank');
+            }
+
+            alert('Demande de scraping envoyée avec succès !');
+
+        } catch (error) {
+            console.error('Scraping error:', error);
+            statusTitle.innerHTML = `<i class="fas fa-exclamation-triangle text-danger me-2"></i> Erreur`;
+            statusMessage.textContent = error.message;
+            progressBar.classList.add('bg-danger');
+            alert('Erreur: ' + error.message);
+        } finally {
+            scrapeBtn.disabled = false;
+            scrapeBtn.innerHTML = `<i class="fas fa-bolt me-2"></i> Lancer le Scraping`;
+        }
+    });
+}
+
+// ---------------------------------------------------------
+// EDIT SERVICE MODAL LOGIC (CONTINUED)
+// ---------------------------------------------------------
+async function openEditServiceModal(id) {
     if (!localStorage.getItem('token')) {
         alert('Veuillez vous connecter pour gérer vos services');
         return;
     }
     try {
-        // Fetch service data (use fetchWithAuth if you want to protect this too, otherwise fetch is fine for public viewing)
         const response = await fetch(`${API_URL}/services/${id}`);
         if (!response.ok) throw new Error('Service non trouvé');
 
@@ -867,6 +989,11 @@ document.getElementById("addServiceForm").addEventListener("submit", async funct
     const url = isEdit ? `${API_URL}/services/${this.dataset.editId}` : `${API_URL}/services`;
     const method = isEdit ? "PUT" : "POST";
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Envoi en cours...`;
+
     const formData = new FormData(this);
 
     try {
@@ -908,13 +1035,16 @@ document.getElementById("addServiceForm").addEventListener("submit", async funct
             }
 
             // Reload services
-            searchServices();
+            searchServices(); // Reload services
         } else {
-            alert("Erreur: " + (data.error || "Erreur inconnue"));
+            alert('Erreur: ' + (data.error || 'Erreur inconnue'));
         }
     } catch (error) {
-        console.error('Form submission error:', error);
-        alert("Erreur lors de l'opération: " + error.message);
+        console.error('Error submitting form:', error);
+        alert('Erreur lors de l\'envoi du formulaire: ' + error.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
     }
 });
 
@@ -1184,6 +1314,9 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Load initial services with favorites
     loadServicesWithFavorites();
+
+    // Initialize scraping form
+    initScrapingForm();
     
     // Set default active button
     const defaultBtn = document.querySelector('.btn-group-vertical .btn.active');
