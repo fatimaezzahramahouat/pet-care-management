@@ -835,16 +835,19 @@ function initScrapingForm() {
                 jobIdSpan.textContent = 'N/A';
             }
 
-            // If n8n returns a sheet URL, open it automatically
+            // If n8n returns a sheet URL, redirect automatically
             if (result.data && result.data.sheetUrl) {
                 openSheetBtn.classList.remove('d-none');
                 openSheetBtn.onclick = () => window.open(result.data.sheetUrl, '_blank');
                 
-                // Automatic redirect after a short delay to let user see the success message
+                // Definitive redirect after status update
+                statusTitle.innerHTML = `<i class="fas fa-check-circle text-success me-2"></i> Terminé !`;
                 statusMessage.textContent = 'Scraping terminé ! Redirection vers vos résultats...';
+                
                 setTimeout(() => {
-                    window.open(result.data.sheetUrl, '_blank');
-                }, 2000);
+                    // Using window.location.href is more reliable than window.open in a timeout
+                    window.location.href = result.data.sheetUrl;
+                }, 1500);
             }
 
             alert('Demande de scraping envoyée avec succès !');
