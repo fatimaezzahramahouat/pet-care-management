@@ -813,7 +813,7 @@ app.get('/api/test-supabase', async (req, res) => {
 
 // MAIN PAGE
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // MIDDLEWARE ERRORS
@@ -823,7 +823,12 @@ app.use((err, req, res, next) => {
         return res.status(400).json({ success: false, error: 'Erreur lors de l\'upload de l\'image' });
     }
     console.error('Erreur générale:', err);
-    res.status(500).json({ success: false, error: 'Erreur interne du serveur' });
+    res.status(500).json({ 
+        success: false, 
+        error: 'Erreur interne du serveur',
+        details: err.message,
+        path: req.path
+    });
 });
 
 // 404
@@ -837,7 +842,6 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
         console.log(`Server running on port ${port}`);
         console.log(`Supabase URL: ${process.env.SUPABASE_URL}`);
         console.log(`Table: services_animaliers`);
-        console.log(`Uploads folder: uploads/`);
     });
 }
 

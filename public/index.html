@@ -61,14 +61,19 @@
             </a>
             
             <!-- Bouton hamburger pour mobile -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" >
                 <span class="navbar-toggler-icon"></span>
             </button>
             
             <!-- Menu -->
-            <div class="collapse navbar-collapse" id="navbarMain">
+            <div class="collapse navbar-collapse"  id="navbarMain">
                 <!-- Liens de navigation -->
                 <ul class="navbar-nav mx-auto">
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" href="#home">
+                            <i class="bi bi-house me-1"></i> home
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link text-dark" href="#services">
                             <i class="bi bi-list-check me-1"></i> Services
@@ -106,7 +111,7 @@
                 <div class="row mb-5">
                     <div class="col-12">
                         <div class="card border-0 shadow-lg overflow-hidden">
-                            <img src="assets/Gemini_Generated_Image_hqk834hqk834hqk8.png" 
+                            <img src="assets/ChatGPT Image 28 déc. 2025, 18_52_10 (2).png" 
                                  class="card-img-top" 
                                  alt="Services pour animaux de compagnie"
                                  style="height: 300px; object-fit: cover;">
@@ -219,13 +224,7 @@
                         </div>
                     </div>
                 </div>
-                  <!-- Bouton Ajouter un service -->
-                <div class="text-center mt-5">
-                    <button class="btn btn-success btn-lg" onclick="openAddServiceModal()">
-                        <i class="bi bi-plus-circle me-2"></i>Ajouter un service
-
-
-                </div>
+               
 
      
                 <!-- Résultats de recherche -->
@@ -667,10 +666,7 @@
     </div>
 
 
-      <!-- CHATBOT -->
-  <div id="chat"></div>
-  <input id="msg" placeholder="Type your message..." />
-  <button onclick="send()">Send</button>
+   
     <!-- PIED DE PAGE -->
     <footer class="bg-dark text-white py-4">
         <div class="container">
