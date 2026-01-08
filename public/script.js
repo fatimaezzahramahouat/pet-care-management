@@ -5,7 +5,11 @@ let currentService = 'vet';
 let currentVille = '';
 let currentPetType = 'all';
 let allServices = []; // Pour stocker tous les services
+
 const API_URL = 'http://localhost:5000/api';
+
+ 
+ 
 
 // ===============================
 // FAVORITES FUNCTIONS

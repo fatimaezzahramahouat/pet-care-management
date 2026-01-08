@@ -87,6 +87,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
+app.use(cors({
+  origin: ['https://pet-care-management.vercel.app'],
+  methods: ['GET','POST','PUT','DELETE'],
+  credentials: true
+}));
+
+
 // ----------------- ROUTES -----------------
 
 // GET all services
