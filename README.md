@@ -72,3 +72,37 @@ npm start
 1. Install Vercel CLI: `npm i -g vercel`
 2. Run `vercel`.
 3. Set Environment Variables in Vercel Dashboard.
+
+
+my-project/
+│
+├── public/                 # Front-end static files
+│   ├── assets/             # Images, icons, fonts
+│   └── index.html          # Main HTML file
+│
+├── src/                    # Front-end source (if using JS/CSS modules)
+│   ├── js/                 # JavaScript files
+│   └── css/                # CSS files (Tailwind output etc.)
+│
+├── uploads/                # Uploaded files (if using Multer)
+│
+├── routes/                 # Express route handlers
+│   └── api.js              # Example: all API endpoints here
+│
+├── controllers/            # Logic for handling requests
+│   └── userController.js
+│
+├── middleware/             # Express middleware (auth, logging etc.)
+│   └── auth.js
+│
+├── models/                 # Database models (if using Supabase/SQL)
+│   └── userModel.js
+│
+├── utils/                  # Utility functions
+│   └── jwt.js
+│
+├── .env                    # Environment variables (do NOT commit)
+├── package.json             # Project dependencies and scripts
+├── package-lock.json
+├── app.js / index.js        # Main Express server entry point
+└── vercel.json              # Vercel deployment config (optional)
