@@ -1421,6 +1421,37 @@ function updateActiveNavLink() {
         }
     });
 }
+  
+
+//==============================
+//bot
+//==============================
+
+const CHAT_URL= "https://n8n.zackdev.io/webhook/0414cfcc-6e2d-48d3-9f6c-af7895f2142d/chat";
+
+let sessionId = localStorage.getItem("session_id");
+if (!sessionId) {
+  sessionId = crypto.randomUUID();
+  localStorage.setItem("session_id", sessionId);
+}
+
+async function send() {
+  const message = document.getElementById("msg").value;
+
+  const res = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message,
+      user_name: window.USER_NAME || "Inconnu",
+      is_connected: !!window.USER_NAME,
+      session_id: sessionId
+    })
+  });
+
+  const data = await res.json();
+  document.getElementById("chat").innerHTML += `<p><b>Bot:</b> ${data.reply}</p>`;
+}
 
 // ===============================
 // SCROLL EVENT
