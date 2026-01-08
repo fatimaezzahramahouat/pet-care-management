@@ -66,19 +66,7 @@ const authenticateToken = (req, res, next) => {
 };
 
 // ----------------- UPLOAD IMAGES -----------------
-if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads');
-}
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
     storage: storage,
@@ -98,7 +86,6 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
-app.use('/uploads', express.static('uploads'));
 
 // ----------------- ROUTES -----------------
 
@@ -213,7 +200,7 @@ app.post('/api/services', authenticateToken, upload.single('image'), async (req,
             console.log('--- DEBUT UPLOAD SUPABASE ---');
             console.log('Fichier reçu:', req.file.originalname);
             
-            // Normaliser le nom du fichier (supprimer les caractères spéciaux)
+            // Normaliser le nom du fichier
             const fileExt = path.extname(req.file.originalname);
             const fileNameRoot = path.basename(req.file.originalname, fileExt)
                 .replace(/[^a-z0-9]/gi, '_')
@@ -221,9 +208,8 @@ app.post('/api/services', authenticateToken, upload.single('image'), async (req,
             const fileName = `services/${Date.now()}_${fileNameRoot}${fileExt}`;
             
             console.log('Nom normalisé pour Supabase:', fileName);
-            console.log('Supabase URL:', process.env.SUPABASE_URL);
             
-            const fileBuffer = fs.readFileSync(req.file.path);
+            const fileBuffer = req.file.buffer;
             
             try {
                 const { data, error: uploadError } = await retryStorageUpload(async () => {
@@ -238,12 +224,8 @@ app.post('/api/services', authenticateToken, upload.single('image'), async (req,
 
                 if (uploadError) {
                     console.error('❌ ERREUR UPLOAD SUPABASE APRÈS RETRIES:', uploadError);
-                    // Si on a un objet d'erreur, on l'affiche en entier
-                    console.dir(uploadError, { depth: null });
                     throw uploadError;
                 }
-                
-                console.log('✅ UPLOAD RÉUSSI:', data);
                 
                 // Get public URL
                 const { data: urlData } = supabase.storage
@@ -251,13 +233,9 @@ app.post('/api/services', authenticateToken, upload.single('image'), async (req,
                     .getPublicUrl(fileName);
                 
                 imageUrl = urlData.publicUrl;
-                console.log('Public URL:', imageUrl);
             } catch (err) {
                 console.error('🔥 CRASH PENDANT UPLOAD:', err);
-                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
                 return res.status(500).json({ success: false, error: 'Erreur Supabase Storage: ' + err.message });
-            } finally {
-                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
             }
         }
 
@@ -305,18 +283,14 @@ app.put('/api/services/:id', authenticateToken, upload.single('image'), async (r
         // Upload new image if exists
         if (req.file) {
             console.log('--- DEBUT UPLOAD (EDIT) SUPABASE ---');
-            console.log('Fichier reçu:', req.file.originalname);
-
-            // Normaliser le nom du fichier (supprimer les caractères spéciaux)
+            
             const fileExt = path.extname(req.file.originalname);
             const fileNameRoot = path.basename(req.file.originalname, fileExt)
                 .replace(/[^a-z0-9]/gi, '_')
                 .toLowerCase();
             const fileName = `services/${Date.now()}_${fileNameRoot}${fileExt}`;
             
-            console.log('Nom normalisé pour Supabase:', fileName);
-            
-            const fileBuffer = fs.readFileSync(req.file.path);
+            const fileBuffer = req.file.buffer;
             
             try {
                 const { error: uploadError } = await retryStorageUpload(async () => {
@@ -329,24 +303,16 @@ app.put('/api/services/:id', authenticateToken, upload.single('image'), async (r
                         });
                 });
 
-                if (uploadError) {
-                    console.error('❌ ERREUR STORAGE EDIT RETRIES:', uploadError);
-                    throw uploadError;
-                }
+                if (uploadError) throw uploadError;
                 
-                // Get public URL
                 const { data: urlData } = supabase.storage
                     .from('service-image')
                     .getPublicUrl(fileName);
                 
                 updates.image = urlData.publicUrl;
-                console.log('✅ NOUVELLE IMAGE UPLOADÉE:', updates.image);
             } catch (err) {
                 console.error('🔥 CRASH STORAGE EDIT:', err);
-                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
                 return res.status(500).json({ success: false, error: 'Erreur Supabase Storage (Edit): ' + err.message });
-            } finally {
-                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
             }
         }
 
@@ -798,25 +764,22 @@ app.post('/api/upload-test', upload.single('testImage'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Aucune image uploadée' });
 
     try {
-        const fileBuffer = fs.readFileSync(req.file.path);
+        const fileBuffer = req.file.buffer;
         const fileName = `test/${Date.now()}_${req.file.originalname}`;
         
         const { data, error: uploadError } = await supabase.storage
-            .from('services-images')
+            .from('service-image')
             .upload(fileName, fileBuffer, { contentType: req.file.mimetype });
         
         if (uploadError) throw uploadError;
         
-        fs.unlinkSync(req.file.path);
-
         const { data: urlData } = supabase.storage
-            .from('services-images')
+            .from('service-image')
             .getPublicUrl(fileName);
         
         res.json({ success: true, url: urlData.publicUrl });
     } catch (err) {
         console.error(err);
-        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ success: false, error: err.message });
     }
 });
