@@ -6,13 +6,9 @@ let currentVille = '';
 let currentPetType = 'all';
 let allServices = []; // Pour stocker tous les services
 
+const API_URL = 'http://localhost:5000/api';
 
-
- // VERCEL FIX: Use relative URL for Vercel deployment
-const API_URL = window.location.hostname.includes('localhost') 
-    ? 'http://localhost:5000/api'  // Local development
-    : '/api';                      // Vercel deployment (same domain)
-
+ 
  
 
 // ===============================
