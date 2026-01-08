@@ -13,7 +13,6 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // ----------------- CONFIG SUPABASE -----------------
-// Helper for retry
 async function retryStorageUpload(fn, retries = 3, delay = 2000) {
     for (let i = 0; i < retries; i++) {
         try {
@@ -31,12 +30,10 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     {
         global: {
-            // Increase timeout for slow connections
             fetch: (url, options) => {
                 return fetch(url, { 
                     ...options, 
-                    // @ts-ignore
-                    duplex: 'half' // Required for Node 18+ and large payloads
+                    duplex: 'half'
                 });
             }
         }
@@ -85,14 +82,9 @@ const upload = multer({
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static("public"));
 
-app.use(cors({
-  origin: ['https://pet-care-management.vercel.app'],
-  methods: ['GET','POST','PUT','DELETE'],
-  credentials: true
-}));
-
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ----------------- ROUTES -----------------
 
@@ -426,9 +418,6 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
-
-
-
 //login
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
@@ -451,18 +440,14 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
         }
 
-        // 3️⃣ Optional: sign in with Supabase (if needed for session)
-        // const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        // if (error) throw error;
-
-        // 4️⃣ Generate JWT
+        // 3️⃣ Generate JWT
         const token = jwt.sign(
             { id: user.id, email: user.email, role: user.role },
             JWT_SECRET,
             { expiresIn: JWT_EXPIRES_IN }
         );
 
-        // 5️⃣ Respond to client
+        // 4️⃣ Respond to client
         res.json({
             success: true,
             user: {
@@ -479,6 +464,7 @@ app.post('/api/auth/login', async (req, res) => {
         res.status(500).json({ success: false, error: 'Erreur serveur, veuillez réessayer' });
     }
 });
+
 //dashbord
 app.get('/api/dashboard', (req, res) => {
     const token = req.headers['authorization']?.split(' ')[1]; // Expect "Bearer <token>"
@@ -606,7 +592,6 @@ app.get('/api/me', (req, res) => {
         res.status(401).json({ success: false, error: 'Token invalide ou expiré' });
     }
 });
-
 
 // FAVORITES ROUTES
 // FAVORITES ROUTES - CORRIGÉES
@@ -754,7 +739,6 @@ app.delete('/api/favorites', authenticateToken, async (req, res) => {
         });
     }
 });
-    
 
 // TEST API
 app.get('/api/test', (req, res) => {
@@ -843,13 +827,22 @@ app.use((req, res) => {
     res.status(404).send('Page non trouvée');
 });
 
-// START SERVER
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-    app.listen(port, () => {
-        console.log(`Server running on port ${port}`);
-        console.log(`Supabase URL: ${process.env.SUPABASE_URL}`);
-        console.log(`Table: services_animaliers`);
-    });
-}
+// ============================================
+// VERCEL SERVERLESS COMPATIBILITY
+// ============================================
 
-module.exports = app;
+// For Vercel serverless deployment
+if (process.env.VERCEL) {
+    // Export the Express app as a serverless function
+    module.exports = app;
+} else {
+    // For local development
+    if (process.env.NODE_ENV !== 'production') {
+        app.listen(port, () => {
+            console.log(`Server running on port ${port}`);
+            console.log(`Supabase URL: ${process.env.SUPABASE_URL}`);
+            console.log(`Table: services_animaliers`);
+        });
+    }
+    module.exports = app;
+}
