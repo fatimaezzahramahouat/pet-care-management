@@ -6,7 +6,14 @@ let currentVille = '';
 let currentPetType = 'all';
 let allServices = []; // Pour stocker tous les services
 
-const API_URL = 'http://localhost:5000/api';
+
+
+ // VERCEL FIX: Use relative URL for Vercel deployment
+const API_URL = window.location.hostname.includes('localhost') 
+    ? 'http://localhost:5000/api'  // Local development
+    : '/api';                      // Vercel deployment (same domain)
+
+ 
 
 // ===============================
 // FAVORITES FUNCTIONS
@@ -992,150 +999,143 @@ async function deleteService(id) {
 // ===============================
 // FORM HANDLING
 // ===============================
-document.addEventListener('DOMContentLoaded', function() {
-    const addServiceForm = document.getElementById("addServiceForm");
-    if (addServiceForm) {
-        addServiceForm.addEventListener("submit", async function (e) {
-            e.preventDefault();
+document.getElementById("addServiceForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
 
-            const isEdit = this.dataset.editId;
-            const url = isEdit ? `${API_URL}/services/${this.dataset.editId}` : `${API_URL}/services`;
-            const method = isEdit ? "PUT" : "POST";
+    const isEdit = this.dataset.editId;
+    const url = isEdit ? `${API_URL}/services/${this.dataset.editId}` : `${API_URL}/services`;
+    const method = isEdit ? "PUT" : "POST";
 
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Envoi en cours...`;
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Envoi en cours...`;
 
-            const formData = new FormData(this);
+    const formData = new FormData(this);
 
-            try {
-                const res = await fetchWithAuth(url, {
-                    method: method,
-                    body: formData
-                });
-
-                if (!res.ok) {
-                    const errorText = await res.text();
-                    throw new Error(`Erreur serveur: ${res.status} - ${errorText}`);
-                }
-
-                const data = await res.json();
-
-                if (data.success) {
-                    alert(isEdit ? 'Service mis à jour avec succès !' : 'Service ajouté avec succès !');
-                    
-                    // Close modal
-                    const modalElement = document.getElementById('addServiceModal');
-                    const modal = bootstrap.Modal.getInstance(modalElement);
-                    if (modal) modal.hide();
-
-                    // Reset form
-                    this.reset();
-                    delete this.dataset.editId;
-                    
-                    // Reset modal title and button
-                    document.querySelector('#addServiceModal .modal-title').textContent = 'Ajouter un nouveau service';
-                    const submitBtn = this.querySelector('button[type="submit"]');
-                    submitBtn.textContent = 'Ajouter le service';
-                    submitBtn.classList.remove('btn-primary');
-                    submitBtn.classList.add('btn-success');
-
-                    // Clear image preview
-                    const imagePreview = document.getElementById('imagePreview');
-                    if (imagePreview) {
-                        imagePreview.innerHTML = '';
-                    }
-
-                    // Reload services
-                    searchServices(); // Reload services
-                } else {
-                    alert('Erreur: ' + (data.error || 'Erreur inconnue'));
-                }
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                alert('Erreur lors de l\'envoi du formulaire: ' + error.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
-            }
+    try {
+        const res = await fetchWithAuth(url, {
+            method: method,
+            body: formData
         });
 
-        // Image preview functionality
-        const imageInput = addServiceForm.querySelector('input[name="image"]');
-        if (imageInput) {
-            imageInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                // Check file size (max 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('L\'image est trop volumineuse (max 5MB)');
-                    this.value = '';
-                    return;
-                }
-
-                // Check file type
-                if (!file.type.match('image.*')) {
-                    alert('Veuillez sélectionner une image');
-                    this.value = '';
-                    return;
-                }
-
-                // Create preview
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    let previewContainer = document.getElementById('imagePreview');
-                    if (!previewContainer) {
-                        previewContainer = document.createElement('div');
-                        previewContainer.id = 'imagePreview';
-                        previewContainer.className = 'mt-3';
-                        addServiceForm.querySelector('input[name="image"]').parentNode.appendChild(previewContainer);
-                    }
-                    
-                    previewContainer.innerHTML = `
-                        <div class="alert alert-info p-2">
-                            <small class="d-block mb-2">Aperçu de l'image :</small>
-                            <img src="${e.target.result}" 
-                                 class="img-thumbnail" 
-                                 style="max-width: 200px; max-height: 150px;"
-                                 alt="Aperçu">
-                            <div class="mt-2">
-                                <small>${file.name} (${Math.round(file.size / 1024)} KB)</small>
-                            </div>
-                        </div>
-                    `;
-                };
-                reader.readAsDataURL(file);
-            });
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(`Erreur serveur: ${res.status} - ${errorText}`);
         }
+
+        const data = await res.json();
+
+        if (data.success) {
+            alert(isEdit ? 'Service mis à jour avec succès !' : 'Service ajouté avec succès !');
+            
+            // Close modal
+            const modalElement = document.getElementById('addServiceModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) modal.hide();
+
+            // Reset form
+            this.reset();
+            delete this.dataset.editId;
+            
+            // Reset modal title and button
+            document.querySelector('#addServiceModal .modal-title').textContent = 'Ajouter un nouveau service';
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'Ajouter le service';
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-success');
+
+            // Clear image preview
+            const imagePreview = document.getElementById('imagePreview');
+            if (imagePreview) {
+                imagePreview.innerHTML = '';
+            }
+
+            // Reload services
+            searchServices(); // Reload services
+        } else {
+            alert('Erreur: ' + (data.error || 'Erreur inconnue'));
+        }
+    } catch (error) {
+        console.error('Error submitting form:', error);
+        alert('Erreur lors de l\'envoi du formulaire: ' + error.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+});
+
+// Image preview functionality
+document.querySelector('input[name="image"]')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('L\'image est trop volumineuse (max 5MB)');
+        this.value = '';
+        return;
     }
 
-    // Contact forms
-    const contactForms = ['contactForm', 'contactFormDashboard'];
-    contactForms.forEach(formId => {
-        const contactForm = document.getElementById(formId);
-        if (contactForm) {
-            contactForm.addEventListener("submit", function (e) {
-                e.preventDefault();
+    // Check file type
+    if (!file.type.match('image.*')) {
+        alert('Veuillez sélectionner une image');
+        this.value = '';
+        return;
+    }
 
-                const formData = {
-                    firstName: contactForm.querySelector('#firstName')?.value,
-                    lastName: contactForm.querySelector('#lastName')?.value,
-                    email: contactForm.querySelector('#email_contact')?.value || contactForm.querySelector('#email')?.value,
-                    phone: contactForm.querySelector('#phone')?.value,
-                    petType: contactForm.querySelector('#contactPetType')?.value,
-                    service: contactForm.querySelector('#service_contact')?.value || contactForm.querySelector('#service')?.value,
-                    message: contactForm.querySelector('#message')?.value
-                };
-
-                console.log('Contact form submitted:', formData);
-                alert('Merci ! Votre message a été envoyé. Nous vous répondrons dans les plus brefs délais.');
-                this.reset();
-            });
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        let previewContainer = document.getElementById('imagePreview');
+        if (!previewContainer) {
+            previewContainer = document.createElement('div');
+            previewContainer.id = 'imagePreview';
+            previewContainer.className = 'mt-3';
+            document.querySelector('input[name="image"]').parentNode.appendChild(previewContainer);
         }
-    });
+        
+        previewContainer.innerHTML = `
+            <div class="alert alert-info p-2">
+                <small class="d-block mb-2">Aperçu de l'image :</small>
+                <img src="${e.target.result}" 
+                     class="img-thumbnail" 
+                     style="max-width: 200px; max-height: 150px;"
+                     alt="Aperçu">
+                <div class="mt-2">
+                    <small>${file.name} (${Math.round(file.size / 1024)} KB)</small>
+                </div>
+            </div>
+        `;
+    };
+    reader.readAsDataURL(file);
 });
+
+const contactForms = ['contactForm', 'contactFormDashboard'];
+contactForms.forEach(formId => {
+    const contactForm = document.getElementById(formId);
+    if (contactForm) {
+        contactForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const formData = {
+                firstName: contactForm.querySelector('#firstName')?.value,
+                lastName: contactForm.querySelector('#lastName')?.value,
+                email: contactForm.querySelector('#email_contact')?.value || contactForm.querySelector('#email')?.value,
+                phone: contactForm.querySelector('#phone')?.value,
+                petType: contactForm.querySelector('#contactPetType')?.value,
+                service: contactForm.querySelector('#service_contact')?.value || contactForm.querySelector('#service')?.value,
+                message: contactForm.querySelector('#message')?.value
+            };
+
+            console.log('Contact form submitted:', formData);
+            alert('Merci ! Votre message a été envoyé. Nous vous répondrons dans les plus brefs délais.');
+            this.reset();
+        });
+    }
+});
+//auth
+
 
 // ============================
 // DYNAMIC NAVBAR
@@ -1166,77 +1166,75 @@ function updateNavbar() {
 // ============================
 // REGISTER
 // ============================
-document.addEventListener('DOMContentLoaded', function() {
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = registerForm.name.value.trim();
-            const email = registerForm.email.value.trim();
-            const password = registerForm.password.value;
+const registerForm = document.getElementById('registerForm');
+if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = registerForm.name.value.trim();
+        const email = registerForm.email.value.trim();
+        const password = registerForm.password.value;
 
-            try {
-                const res = await fetch(`${API_URL}/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, password })
-                });
-                const data = await res.json();
+        try {
+            const res = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            const data = await res.json();
 
-                if (!data.success) return alert('Erreur: ' + data.error);
+            if (!data.success) return alert('Erreur: ' + data.error);
 
-                alert(data.message || 'Compte créé avec succès ! Veuillez vous connecter.');
-                registerForm.reset();
-                
-                // Auto close register and open login
-                const regModalEl = document.getElementById('registerModal');
-                const logModalEl = document.getElementById('loginModal');
-                if (regModalEl && logModalEl) {
-                    const regModal = bootstrap.Modal.getInstance(regModalEl) || new bootstrap.Modal(regModalEl);
-                    regModal.hide();
-                    const logModal = bootstrap.Modal.getInstance(logModalEl) || new bootstrap.Modal(logModalEl);
-                    logModal.show();
-                }
-
-            } catch (err) {
-                console.error(err);
-                alert('Erreur lors de l\'inscription');
+            alert(data.message || 'Compte créé avec succès ! Veuillez vous connecter.');
+            registerForm.reset();
+            
+            // Auto close register and open login
+            const regModalEl = document.getElementById('registerModal');
+            const logModalEl = document.getElementById('loginModal');
+            if (regModalEl && logModalEl) {
+                const regModal = bootstrap.Modal.getInstance(regModalEl) || new bootstrap.Modal(regModalEl);
+                regModal.hide();
+                const logModal = bootstrap.Modal.getInstance(logModalEl) || new bootstrap.Modal(logModalEl);
+                logModal.show();
             }
-        });
-    }
 
-    // ============================
-    // LOGIN
-    // ============================
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = loginForm.email.value.trim();
-            const password = loginForm.password.value;
+        } catch (err) {
+            console.error(err);
+            alert('Erreur lors de l\'inscription');
+        }
+    });
+}
 
-            try {
-                const res = await fetch(`${API_URL}/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await res.json();
+// ============================
+// LOGIN
+// ============================
+const loginForm = document.getElementById('loginForm');
+if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = loginForm.email.value.trim();
+        const password = loginForm.password.value;
 
-                if (!data.success) return alert('Erreur: ' + (data.error || data.message));
+        try {
+            const res = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
 
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
+            if (!data.success) return alert('Erreur: ' + (data.error || data.message));
 
-                alert('Connexion réussie !');
-                window.location.href = 'dashboard.html';
-            } catch (err) {
-                console.error(err);
-                alert('Erreur lors de la connexion');
-            }
-        });
-    }
-});
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+
+            alert('Connexion réussie !');
+            window.location.href = 'dashboard.html';
+        } catch (err) {
+            console.error(err);
+            alert('Erreur lors de la connexion');
+        }
+    });
+}
 
 // ============================
 // AUTH HELPERS
@@ -1304,40 +1302,29 @@ function paginateServices() {
   document.getElementById("nextPage").disabled = currentPage === totalPages || totalPages === 0;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const nextPageBtn = document.getElementById("nextPage");
-    const prevPageBtn = document.getElementById("prevPage");
-    
-    if (nextPageBtn) {
-        nextPageBtn.addEventListener("click", () => {
-            currentPage++;
-            paginateServices();
-        });
-    }
-    
-    if (prevPageBtn) {
-        prevPageBtn.addEventListener("click", () => {
-            currentPage--;
-            paginateServices();
-        });
-    }
-
-    const container = document.getElementById("servicesResults");
-    if (container) {
-        const observer = new MutationObserver(() => {
-            if (container.children.length > 0) {
-                currentPage = 1;
-                paginateServices();
-                observer.disconnect();
-            }
-        });
-
-        observer.observe(container, { childList: true });
-    }
+document.getElementById("nextPage").addEventListener("click", () => {
+  currentPage++;
+  paginateServices();
 });
 
+document.getElementById("prevPage").addEventListener("click", () => {
+  currentPage--;
+  paginateServices();
+});
+
+const container = document.getElementById("servicesResults");
+const observer = new MutationObserver(() => {
+  if (container.children.length > 0) {
+    currentPage = 1;
+    paginateServices();
+    observer.disconnect();
+  }
+});
+
+observer.observe(container, { childList: true });
+
 // ===============================
-// INITIALIZATION
+// EVENT LISTENERS & INITIALIZATION
 // ===============================
 document.addEventListener('DOMContentLoaded', function () {
     console.log('Page chargée, initialisation...');
@@ -1373,7 +1360,6 @@ document.addEventListener('DOMContentLoaded', function () {
             searchServices(true);
         });
     }
-    
     // Reset form when modal closes
     const addServiceModal = document.getElementById('addServiceModal');
     if (addServiceModal) {
@@ -1408,6 +1394,9 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('Initialisation terminée');
 });
 
+
+
+
 // ===============================
 // NAVBAR FUNCTIONS
 // ===============================
@@ -1440,6 +1429,7 @@ function updateActiveNavLink() {
         }
     });
 }
+  
 
 //==============================
 //bot
@@ -1456,7 +1446,7 @@ if (!sessionId) {
 async function send() {
   const message = document.getElementById("msg").value;
 
-  const res = await fetch(CHAT_URL, {
+  const res = await fetch(WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
