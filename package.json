@@ -11,7 +11,8 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "build:css": "tailwindcss -i ./public/src/input.css -o ./public/src/output.css --watch",
-    "build:css:prod": "tailwindcss -i ./public/src/input.css -o ./public/src/output.css --minify"
+    "build:css:prod": "tailwindcss -i ./public/src/input.css -o ./public/src/output.css --minify",
+    "build": "npm run build:css:prod"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",

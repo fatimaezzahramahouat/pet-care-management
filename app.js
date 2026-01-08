@@ -869,9 +869,13 @@ app.use((req, res) => {
 });
 
 // START SERVER
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-    console.log(`Supabase URL: ${process.env.SUPABASE_URL}`);
-    console.log(`Table: services_animaliers`);
-    console.log(`Uploads folder: uploads/`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+        console.log(`Supabase URL: ${process.env.SUPABASE_URL}`);
+        console.log(`Table: services_animaliers`);
+        console.log(`Uploads folder: uploads/`);
+    });
+}
+
+module.exports = app;
