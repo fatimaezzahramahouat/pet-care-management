@@ -10,7 +10,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-const port = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
 // ----------------- CONFIG SUPABASE -----------------
 // Helper for retry
@@ -869,9 +869,14 @@ app.use((req, res) => {
 });
 
 // START SERVER
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-    console.log(`Supabase URL: ${process.env.SUPABASE_URL}`);
-    console.log(`Table: services_animaliers`);
-    console.log(`Uploads folder: uploads/`);
-});
+
+
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  
+  });
+}
+
+module.exports = app;
