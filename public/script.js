@@ -6,8 +6,7 @@ let currentVille = '';
 let currentPetType = 'all';
 let allServices = []; // Pour stocker tous les services
 
-const API_URL = "https://pet-care-man-git-bacb4b-fatimaezzahramahouats-projects-bb5bbb38.vercel.app/";
-
+const API_URL = "/api"; 
 
 
 
