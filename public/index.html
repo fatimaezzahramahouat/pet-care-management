@@ -712,6 +712,7 @@
     <!-- Votre JavaScript -->
     <script src="script.js"></script>
     <script src="app.js"></script>
+    
     <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
@@ -719,5 +720,9 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.log('SW registration failed', err));
 }
 </script>
+<script>  // Configuration de base pour Vercel
+    const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:5000/api' 
+        : '/api';</script>
 </body>
 </html> 
