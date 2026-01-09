@@ -8,8 +8,6 @@ let allServices = []; // Pour stocker tous les services
 
 const API_URL = "/api"; 
 
-
-
 // ===============================
 // FAVORITES FUNCTIONS
 // ===============================
