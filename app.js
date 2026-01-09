@@ -13,6 +13,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // ----------------- CONFIG SUPABASE -----------------
+// Helper for retry
 async function retryStorageUpload(fn, retries = 3, delay = 2000) {
     for (let i = 0; i < retries; i++) {
         try {
@@ -30,10 +31,12 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     {
         global: {
+            // Increase timeout for slow connections
             fetch: (url, options) => {
                 return fetch(url, { 
                     ...options, 
-                    duplex: 'half'
+                    // @ts-ignore
+                    duplex: 'half' // Required for Node 18+ and large payloads
                 });
             }
         }
@@ -63,7 +66,19 @@ const authenticateToken = (req, res, next) => {
 };
 
 // ----------------- UPLOAD IMAGES -----------------
-const storage = multer.memoryStorage();
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads');
+}
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
 
 const upload = multer({
     storage: storage,
@@ -82,9 +97,8 @@ const upload = multer({
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-
-// Serve static files from public directory
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static("public"));
+app.use('/uploads', express.static('uploads'));
 
 // ----------------- ROUTES -----------------
 
@@ -199,7 +213,7 @@ app.post('/api/services', authenticateToken, upload.single('image'), async (req,
             console.log('--- DEBUT UPLOAD SUPABASE ---');
             console.log('Fichier reçu:', req.file.originalname);
             
-            // Normaliser le nom du fichier
+            // Normaliser le nom du fichier (supprimer les caractères spéciaux)
             const fileExt = path.extname(req.file.originalname);
             const fileNameRoot = path.basename(req.file.originalname, fileExt)
                 .replace(/[^a-z0-9]/gi, '_')
@@ -207,8 +221,9 @@ app.post('/api/services', authenticateToken, upload.single('image'), async (req,
             const fileName = `services/${Date.now()}_${fileNameRoot}${fileExt}`;
             
             console.log('Nom normalisé pour Supabase:', fileName);
+            console.log('Supabase URL:', process.env.SUPABASE_URL);
             
-            const fileBuffer = req.file.buffer;
+            const fileBuffer = fs.readFileSync(req.file.path);
             
             try {
                 const { data, error: uploadError } = await retryStorageUpload(async () => {
@@ -223,8 +238,12 @@ app.post('/api/services', authenticateToken, upload.single('image'), async (req,
 
                 if (uploadError) {
                     console.error('❌ ERREUR UPLOAD SUPABASE APRÈS RETRIES:', uploadError);
+                    // Si on a un objet d'erreur, on l'affiche en entier
+                    console.dir(uploadError, { depth: null });
                     throw uploadError;
                 }
+                
+                console.log('✅ UPLOAD RÉUSSI:', data);
                 
                 // Get public URL
                 const { data: urlData } = supabase.storage
@@ -232,9 +251,13 @@ app.post('/api/services', authenticateToken, upload.single('image'), async (req,
                     .getPublicUrl(fileName);
                 
                 imageUrl = urlData.publicUrl;
+                console.log('Public URL:', imageUrl);
             } catch (err) {
                 console.error('🔥 CRASH PENDANT UPLOAD:', err);
+                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
                 return res.status(500).json({ success: false, error: 'Erreur Supabase Storage: ' + err.message });
+            } finally {
+                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
             }
         }
 
@@ -282,14 +305,18 @@ app.put('/api/services/:id', authenticateToken, upload.single('image'), async (r
         // Upload new image if exists
         if (req.file) {
             console.log('--- DEBUT UPLOAD (EDIT) SUPABASE ---');
-            
+            console.log('Fichier reçu:', req.file.originalname);
+
+            // Normaliser le nom du fichier (supprimer les caractères spéciaux)
             const fileExt = path.extname(req.file.originalname);
             const fileNameRoot = path.basename(req.file.originalname, fileExt)
                 .replace(/[^a-z0-9]/gi, '_')
                 .toLowerCase();
             const fileName = `services/${Date.now()}_${fileNameRoot}${fileExt}`;
             
-            const fileBuffer = req.file.buffer;
+            console.log('Nom normalisé pour Supabase:', fileName);
+            
+            const fileBuffer = fs.readFileSync(req.file.path);
             
             try {
                 const { error: uploadError } = await retryStorageUpload(async () => {
@@ -302,16 +329,24 @@ app.put('/api/services/:id', authenticateToken, upload.single('image'), async (r
                         });
                 });
 
-                if (uploadError) throw uploadError;
+                if (uploadError) {
+                    console.error('❌ ERREUR STORAGE EDIT RETRIES:', uploadError);
+                    throw uploadError;
+                }
                 
+                // Get public URL
                 const { data: urlData } = supabase.storage
                     .from('service-image')
                     .getPublicUrl(fileName);
                 
                 updates.image = urlData.publicUrl;
+                console.log('✅ NOUVELLE IMAGE UPLOADÉE:', updates.image);
             } catch (err) {
                 console.error('🔥 CRASH STORAGE EDIT:', err);
+                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
                 return res.status(500).json({ success: false, error: 'Erreur Supabase Storage (Edit): ' + err.message });
+            } finally {
+                if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
             }
         }
 
@@ -418,6 +453,9 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
+
+
+
 //login
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
@@ -440,14 +478,18 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
         }
 
-        // 3️⃣ Generate JWT
+        // 3️⃣ Optional: sign in with Supabase (if needed for session)
+        // const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        // if (error) throw error;
+
+        // 4️⃣ Generate JWT
         const token = jwt.sign(
             { id: user.id, email: user.email, role: user.role },
             JWT_SECRET,
             { expiresIn: JWT_EXPIRES_IN }
         );
 
-        // 4️⃣ Respond to client
+        // 5️⃣ Respond to client
         res.json({
             success: true,
             user: {
@@ -464,7 +506,6 @@ app.post('/api/auth/login', async (req, res) => {
         res.status(500).json({ success: false, error: 'Erreur serveur, veuillez réessayer' });
     }
 });
-
 //dashbord
 app.get('/api/dashboard', (req, res) => {
     const token = req.headers['authorization']?.split(' ')[1]; // Expect "Bearer <token>"
@@ -592,6 +633,7 @@ app.get('/api/me', (req, res) => {
         res.status(401).json({ success: false, error: 'Token invalide ou expiré' });
     }
 });
+
 
 // FAVORITES ROUTES
 // FAVORITES ROUTES - CORRIGÉES
@@ -739,6 +781,7 @@ app.delete('/api/favorites', authenticateToken, async (req, res) => {
         });
     }
 });
+    
 
 // TEST API
 app.get('/api/test', (req, res) => {
@@ -755,22 +798,25 @@ app.post('/api/upload-test', upload.single('testImage'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Aucune image uploadée' });
 
     try {
-        const fileBuffer = req.file.buffer;
+        const fileBuffer = fs.readFileSync(req.file.path);
         const fileName = `test/${Date.now()}_${req.file.originalname}`;
         
         const { data, error: uploadError } = await supabase.storage
-            .from('service-image')
+            .from('services-images')
             .upload(fileName, fileBuffer, { contentType: req.file.mimetype });
         
         if (uploadError) throw uploadError;
         
+        fs.unlinkSync(req.file.path);
+
         const { data: urlData } = supabase.storage
-            .from('service-image')
+            .from('services-images')
             .getPublicUrl(fileName);
         
         res.json({ success: true, url: urlData.publicUrl });
     } catch (err) {
         console.error(err);
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -804,7 +850,7 @@ app.get('/api/test-supabase', async (req, res) => {
 
 // MAIN PAGE
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(__dirname + '/index.html');
 });
 
 // MIDDLEWARE ERRORS
@@ -814,12 +860,7 @@ app.use((err, req, res, next) => {
         return res.status(400).json({ success: false, error: 'Erreur lors de l\'upload de l\'image' });
     }
     console.error('Erreur générale:', err);
-    res.status(500).json({ 
-        success: false, 
-        error: 'Erreur interne du serveur',
-        details: err.message,
-        path: req.path
-    });
+    res.status(500).json({ success: false, error: 'Erreur interne du serveur' });
 });
 
 // 404
@@ -827,22 +868,10 @@ app.use((req, res) => {
     res.status(404).send('Page non trouvée');
 });
 
-// ============================================
-// VERCEL SERVERLESS COMPATIBILITY
-// ============================================
-
-// For Vercel serverless deployment
-if (process.env.VERCEL) {
-    // Export the Express app as a serverless function
-    module.exports = app;
-} else {
-    // For local development
-    if (process.env.NODE_ENV !== 'production') {
-        app.listen(port, () => {
-            console.log(`Server running on port ${port}`);
-            console.log(`Supabase URL: ${process.env.SUPABASE_URL}`);
-            console.log(`Table: services_animaliers`);
-        });
-    }
-    module.exports = app;
-}
+// START SERVER
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+    console.log(`Supabase URL: ${process.env.SUPABASE_URL}`);
+    console.log(`Table: services_animaliers`);
+    console.log(`Uploads folder: uploads/`);
+});
